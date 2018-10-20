@@ -1067,7 +1067,7 @@ namespace Always_On_Server
                         Game1.chatBox.setText("Flower Dance Today.");
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
                         Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be going. It breaks my code.");
+                        Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
 
                     }
@@ -1084,7 +1084,7 @@ namespace Always_On_Server
                         Game1.chatBox.setText("Luau Today!");
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
                         Game1.chatBox.activate();
-                        Game1.chatBox.setText("Luau Today! I will not be in bed until after 2:00 P.M.");
+                        Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
                     }
                     Luau();

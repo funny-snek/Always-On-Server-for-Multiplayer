@@ -1,7 +1,7 @@
 {
   "Name": "Always_On_Server",
   "Author": "funny-snek & Zuberii",
-  "Version": "1.10.5",
+  "Version": "1.10.6",
   "Description": "A Headless Server Mod",
   "UniqueID": "funny-snek.Always_On_Server",
   "EntryDll": "Always On Server.dll",
