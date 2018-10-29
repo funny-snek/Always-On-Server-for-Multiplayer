@@ -19,6 +19,7 @@ namespace Always_On_Server
     {
         public string serverHotKey { get; set; } = Keys.F9.ToString();
 
+        public float profitmargin { get; set; } = 100f;
         public string petname { get; set; } = "Funnysnek";
         public bool farmcavechoicemushrooms { get; set; } = true;
         public bool communitycenterrun { get; set; } = true;
@@ -36,7 +37,7 @@ namespace Always_On_Server
         public int grangeDisplayCountDownConfig { get; set; } = 60;
         public int iceFishingCountDownConfig { get; set; } = 60;
 
-        public int endofdayTimeOut { get; set; } = 120;
+        public int endofdayTimeOut { get; set; } = 300;
         public int fairTimeOut { get; set; } = 1200;
         public int spiritsEveTimeOut { get; set; } = 900;
         public int winterStarTimeOut { get; set; } = 900;
@@ -223,8 +224,15 @@ namespace Always_On_Server
             {
                 int connectionsCount = Game1.server.connectionsCount;
                 DrawTextBox(5, 100, Game1.dialogueFont, "Server Mode On", 0, 1f);
-                DrawTextBox(5, 180, Game1.dialogueFont, $"{connectionsCount} Players Online", 0, 1f);
-                DrawTextBox(5, 260, Game1.dialogueFont, $"Press {this.Config.serverHotKey} On/Off", 0, 1f);
+                DrawTextBox(5, 180, Game1.dialogueFont, $"Press {this.Config.serverHotKey} On/Off", 0, 1f);
+                float profitMargin = this.Config.profitmargin;
+                DrawTextBox(5, 260, Game1.dialogueFont, $"Profit Margin: {profitMargin}%", 0, 1f);
+                DrawTextBox(5, 340, Game1.dialogueFont, $"{connectionsCount} Players Online", 0, 1f);
+                if (Game1.server.getInviteCode() != null)
+                {
+                    string inviteCode = Game1.server.getInviteCode();
+                    DrawTextBox(5, 420, Game1.dialogueFont, $"Invite Code: {inviteCode}", 0, 1f);
+                }
             }
         }
         
@@ -1517,7 +1525,7 @@ namespace Always_On_Server
             if (Game1.timeOfDay == 610)
             {
                 shippingMenuActive = false;
-                
+                Game1.player.difficultyModifier = this.Config.profitmargin * .01f;
 
                     Game1.options.setServerMode("online");
                     timeOutTicksForReset = 0;
