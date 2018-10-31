@@ -19,7 +19,7 @@ namespace Always_On_Server
     {
         public string serverHotKey { get; set; } = Keys.F9.ToString();
 
-        public float profitmargin { get; set; } = 100f;
+        public int profitmargin { get; set; } = 100;
         public string petname { get; set; } = "Funnysnek";
         public bool farmcavechoicemushrooms { get; set; } = true;
         public bool communitycenterrun { get; set; } = true;
@@ -85,7 +85,7 @@ namespace Always_On_Server
 
         private readonly Dictionary<string, int> PreviousFriendships = new Dictionary<string, int>();  //stores friendship values
 
-
+        public int connectionsCount;
 
         private bool eggHuntAvailable = false; //is egg festival ready start timer for triggering eggHunt Event
         private int eggHuntCountDown; //to trigger egghunt after set time
@@ -244,9 +244,10 @@ namespace Always_On_Server
             {
                 if (IsEnabled == false)
                 {
+                    Helper.ReadConfig<ModConfig>();
                     IsEnabled = true;
 
-
+                    
                     this.Monitor.Log("Server Mode On!", LogLevel.Info);
                     Game1.chatBox.addInfoMessage("The Host is in Server Mode!");
 
@@ -304,6 +305,7 @@ namespace Always_On_Server
                 {
                     if (IsEnabled == false)
                     {
+                        Helper.ReadConfig<ModConfig>();
                         IsEnabled = true;
                         this.Monitor.Log("The server is on!", LogLevel.Info);
                         Game1.chatBox.addInfoMessage("The Host is in Server Mode!");
@@ -446,15 +448,45 @@ namespace Always_On_Server
                 }
 
             }
+            //write number of players online to connectionscount.txt
+            if (Game1.options.enableServer == true)
+            {
 
+                if (connectionsCount != Game1.server.connectionsCount)
+                {
+                    connectionsCount = Game1.server.connectionsCount;
 
+                    try
+                    {
+
+                        //Pass the filepath and filename to the StreamWriter Constructor
+                        StreamWriter sw = new StreamWriter("Mods/Always On Server/ConnectionsCount.txt");
+
+                        //Write a line of text
+                        sw.WriteLine(connectionsCount);
+                        //Close the file
+                        sw.Close();
+                    }
+                    catch (Exception b)
+                    {
+                        Console.WriteLine("Exception: " + b.Message);
+                    }
+                    finally
+                    {
+                        Console.WriteLine("Executing finally block.");
+                    }
+
+                }
+
+            }
 
             //left click menu spammer and event skipper to get through random events happening
             if (IsEnabled == true) // server toggle
             {
                 if (Game1.activeClickableMenu != null)
                 {
-                    this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(0, 0, true);
+                    Game1.activeClickableMenu.receiveLeftClick(0,0, true);
+                    
                 }
                 if (Game1.CurrentEvent != null && Game1.CurrentEvent.skippable == true)
                 {
@@ -1461,7 +1493,7 @@ namespace Always_On_Server
             Game1.displayHUD = true;
             Game1.warpFarmer("Farmhouse", bedX, bedY, false);
 
-            Game1.itemsToShip.Add(new StardewValley.Object(168, 1 /* the number of items */));
+            
             this.Helper.Reflection.GetMethod(Game1.currentLocation, "startSleep").Invoke();
 
 
@@ -1481,7 +1513,7 @@ namespace Always_On_Server
             {
                 this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "okClicked").Invoke();
             }
-
+            
         }
 
         //resets server connection after certain amount of time end of day
