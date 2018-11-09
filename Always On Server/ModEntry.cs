@@ -80,6 +80,7 @@ namespace Always_On_Server
         public bool clientPaused = false;
         private string inviteCode = "a";
         private string inviteCodeTXT = "a";
+        private bool playerMovedRight = false;
         //debug tools
         private bool debug = false;
         private bool shippingMenuActive = false;
@@ -140,6 +141,7 @@ namespace Always_On_Server
             GameEvents.OneSecondTick += this.GameEvents_OneSecondTick; //game tick event handler
             TimeEvents.TimeOfDayChanged += this.TimeEvents_TimeOfDayChanged; // Time of day change handler
             TimeEvents.TimeOfDayChanged += this.FullAutoHandler; //handles various events the host normally has to click through
+            GameEvents.UpdateTick += this.InstantAutoHandler; //handles various events that should occur as soon as they are available
             ControlEvents.KeyPressed += this.ControlEvents_KeyPressed;
             GraphicsEvents.OnPostRenderEvent += this.GraphicsEvents_OnPostRenderEvent;
             MultiplayerEvents.BeforeMainSync += Sync; //used bc only thing that gets throug save window
@@ -482,10 +484,13 @@ namespace Always_On_Server
             }
 
             //left click menu spammer and event skipper to get through random events happening
+            //also moves player around, this seems to free host from random bugs sometimes
             if (IsEnabled == true) // server toggle
             {
-                if (Game1.activeClickableMenu != null )
+                
+                if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is DialogueBox)
                 {
+                    
                     Game1.activeClickableMenu.receiveLeftClick(10,10, true);
                     
                 }
@@ -493,7 +498,16 @@ namespace Always_On_Server
                 {
                     Game1.CurrentEvent.skipEvent();
                 }
-
+                if (playerMovedRight == false && Game1.player.canMove == true)
+                {
+                    Game1.player.tryToMoveInDirection(1, true, 0, false);
+                    playerMovedRight = true;
+                }
+                else if (playerMovedRight == true && Game1.player.canMove == true)
+                {
+                    Game1.player.tryToMoveInDirection(3, true, 0, false);
+                    playerMovedRight = false;
+                }
             }
 
 
@@ -905,32 +919,7 @@ namespace Always_On_Server
                     }
                     if (currentTime == 630)
                     {
-                        //petchoice
-                        if (!Game1.player.hasPet())
-                        {
-                            this.Helper.Reflection.GetMethod(new Event(), "namePet", true).Invoke(this.Config.petname.Substring(0, 9));
-                        }
-                        if (Game1.player.hasPet() && Game1.getCharacterFromName(Game1.player.getPetName(), false) is Pet pet)
-                        {
-                            pet.Name = this.Config.petname.Substring(0, 9);
-                            pet.displayName = this.Config.petname.Substring(0, 9);
-                        }
-                    //cave choice unlock 
-                    if (!Game1.player.eventsSeen.Contains(65))
-                        {
-                            Game1.player.eventsSeen.Add(65);
-
-
-                            if (this.Config.farmcavechoicemushrooms == true)
-                            {
-                                Game1.MasterPlayer.caveChoice.Value = 2;
-                                (Game1.getLocationFromName("FarmCave") as FarmCave).setUpMushroomHouse();
-                            }
-                            else
-                            {
-                                Game1.MasterPlayer.caveChoice.Value = 1;
-                            }
-                        }
+                        
                         //rustkey-sewers unlock
                         if (Game1.player.hasRustyKey == false)
                         {
@@ -945,13 +934,7 @@ namespace Always_On_Server
                             }
                         }
 
-                        //community center unlock
-                        if (!Game1.player.eventsSeen.Contains(611439))
-                        {
-
-                            Game1.player.eventsSeen.Add(611439);
-                            Game1.MasterPlayer.mailReceived.Add("ccDoorUnlock");
-                        }
+                        
                         //community center complete
                         if (this.Config.communitycenterrun == true)
                         {
@@ -1041,13 +1024,6 @@ namespace Always_On_Server
                     {
                         Game1.warpFarmer("Farm", 64, 15, false);
                     }
-                    if (currentTime == 650)
-                    {
-                        if (this.Config.upgradeHouse != 0 && Game1.player.HouseUpgradeLevel != this.Config.upgradeHouse)
-                        {
-                            Game1.player.HouseUpgradeLevel = this.Config.upgradeHouse;
-                        }
-                    }
                     //get fishing rod (standard spam clicker will get through cutscene)
                     if (currentTime == 900 && !Game1.player.eventsSeen.Contains(739330))
                     {
@@ -1059,6 +1035,56 @@ namespace Always_On_Server
                 
             }
         }
+        private void InstantAutoHandler(object sender, EventArgs e)
+        {
+            if (IsEnabled == true)
+            {
+                //petchoice
+                if (!Game1.player.hasPet())
+                {
+                    this.Helper.Reflection.GetMethod(new Event(), "namePet", true).Invoke(this.Config.petname.Substring(0, 9));
+                }
+                if (Game1.player.hasPet() && Game1.getCharacterFromName(Game1.player.getPetName(), false) is Pet pet)
+                {
+                    pet.Name = this.Config.petname.Substring(0, 9);
+                    pet.displayName = this.Config.petname.Substring(0, 9);
+                }
+                //cave choice unlock 
+                if (!Game1.player.eventsSeen.Contains(65))
+                {
+                    Game1.player.eventsSeen.Add(65);
+
+
+                    if (this.Config.farmcavechoicemushrooms == true)
+                    {
+                        Game1.MasterPlayer.caveChoice.Value = 2;
+                        (Game1.getLocationFromName("FarmCave") as FarmCave).setUpMushroomHouse();
+                    }
+                    else
+                    {
+                        Game1.MasterPlayer.caveChoice.Value = 1;
+                    }
+                }
+                //community center unlock
+                if (!Game1.player.eventsSeen.Contains(611439))
+                {
+
+                    Game1.player.eventsSeen.Add(611439);
+                    Game1.MasterPlayer.mailReceived.Add("ccDoorUnlock");
+                }
+                if (this.Config.upgradeHouse != 0 && Game1.player.HouseUpgradeLevel != this.Config.upgradeHouse)
+                {
+                    Game1.player.HouseUpgradeLevel = this.Config.upgradeHouse;
+                }
+                // just turns off server mod if the game gets exited back to title screen
+                if (Game1.activeClickableMenu is TitleMenu)
+                {
+                    IsEnabled = false;
+                }
+            }
+        }
+
+
         // auto-sleep and Holiday code
         private void TimeEvents_TimeOfDayChanged(object sender, EventArgs e)
         {
