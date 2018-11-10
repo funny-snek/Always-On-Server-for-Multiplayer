@@ -12,6 +12,8 @@ using StardewValley.Locations;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley.Characters;
+using StardewValley.Objects;
+using StardewValley.Network;
 
 namespace Always_On_Server
 {
@@ -26,6 +28,7 @@ namespace Always_On_Server
         public bool communitycenterrun { get; set; } = true;
         public int timeOfDayToSleep { get; set; } = 2200;
 
+        public bool lockPlayerChests { get; set; } = true;
         public bool clientsCanPause { get; set; } = false;
         public bool copyInviteCodeToClipboard { get; set; } = true;
         
@@ -1037,8 +1040,32 @@ namespace Always_On_Server
         }
         private void InstantAutoHandler(object sender, EventArgs e)
         {
+
             if (IsEnabled == true)
             {
+                //lockPlayerChests
+                if(this.Config.lockPlayerChests == true)
+                {
+                    foreach (Farmer farmer in Game1.getOnlineFarmers())
+                    {
+                        if (farmer.currentLocation is Cabin cabin && farmer != cabin.owner)
+                        {
+                            NetMutex mutex = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
+                            mutex.RequestLock();
+
+                            foreach (StardewValley.Object x in cabin.objects.Values)
+                            {
+                                if (x is Chest chest)
+                                {
+                                    chest.mutex.RequestLock();
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+
                 //petchoice
                 if (!Game1.player.hasPet())
                 {
