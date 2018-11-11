@@ -84,6 +84,7 @@ namespace Always_On_Server
         private string inviteCode = "a";
         private string inviteCodeTXT = "a";
         private bool playerMovedRight = false;
+        private Color unlockedChestColor = new Color(254, 254, 254, 255); //white
         //debug tools
         private bool debug = false;
         private bool shippingMenuActive = false;
@@ -1057,7 +1058,15 @@ namespace Always_On_Server
                             {
                                 if (x is Chest chest)
                                 {
-                                    chest.mutex.RequestLock();
+                                    
+                                    if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
+                                    {
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        chest.mutex.RequestLock();
+                                    }
                                 }
                             }
                         }
