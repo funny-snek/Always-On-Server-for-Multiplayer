@@ -1635,7 +1635,10 @@ namespace Always_On_Server
                     
                 
             }
-
+            if (Game1.timeOfDay == 2600)
+            {
+                Game1.player.startToPassOut();
+            }
 
         }
 
