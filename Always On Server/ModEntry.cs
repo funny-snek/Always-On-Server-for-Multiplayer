@@ -83,7 +83,7 @@ namespace Always_On_Server
         public bool clientPaused = false;
         private string inviteCode = "a";
         private string inviteCodeTXT = "a";
-        private bool playerMovedRight = false;
+        //private bool playerMovedRight = false;
         private Color unlockedChestColor = new Color(254, 254, 254, 255); //white
         //debug tools
         private bool debug = false;
@@ -91,7 +91,7 @@ namespace Always_On_Server
 
         private readonly Dictionary<string, int> PreviousFriendships = new Dictionary<string, int>();  //stores friendship values
 
-        public int connectionsCount;
+        public int connectionsCount = 1;
 
         private bool eggHuntAvailable = false; //is egg festival ready start timer for triggering eggHunt Event
         private int eggHuntCountDown; //to trigger egghunt after set time
@@ -123,6 +123,7 @@ namespace Always_On_Server
         private int timeOutTicksForReset;
         private int festivalTicksForReset;
         private int shippingMenuTimeoutTicks;
+        private int warpOutsideEndOfDayTimeOutTicks;
         
         SDate currentDateForReset = SDate.Now();
         SDate danceOfJelliesForReset = new SDate(28, "summer");
@@ -455,7 +456,7 @@ namespace Always_On_Server
                 }
 
             }
-            //write number of players online to connectionscount.txt
+            //write number of players online to .txt
             if (Game1.options.enableServer == true)
             {
 
@@ -502,7 +503,7 @@ namespace Always_On_Server
                 {
                     Game1.CurrentEvent.skipEvent();
                 }
-                if (playerMovedRight == false && Game1.player.canMove == true)
+                /*if (playerMovedRight == false && Game1.player.canMove == true)
                 {
                     Game1.player.tryToMoveInDirection(1, true, 0, false);
                     playerMovedRight = true;
@@ -511,7 +512,7 @@ namespace Always_On_Server
                 {
                     Game1.player.tryToMoveInDirection(3, true, 0, false);
                     playerMovedRight = false;
-                }
+                }*/
             }
 
 
@@ -881,7 +882,7 @@ namespace Always_On_Server
                     { Game1.paused = false; }
 
                 }
-                else if (numPlayers <= 0 && Game1.timeOfDay >= 610 && currentDate != eggFestival && currentDate != flowerDance && currentDate != luau && currentDate != danceOfJellies && currentDate != stardewValleyFair && currentDate != spiritsEve && currentDate != festivalOfIce && currentDate != feastOfWinterStar)
+                else if (numPlayers <= 0 && Game1.timeOfDay >= 610 && Game1.timeOfDay <= 2500 && currentDate != eggFestival && currentDate != flowerDance && currentDate != luau && currentDate != danceOfJellies && currentDate != stardewValleyFair && currentDate != spiritsEve && currentDate != festivalOfIce && currentDate != feastOfWinterStar)
                 {
                     Game1.paused = true;
 
@@ -1632,12 +1633,19 @@ namespace Always_On_Server
                     Game1.options.setServerMode("online");
                     timeOutTicksForReset = 0;
                     shippingMenuTimeoutTicks = 0;
-                    
-                
+                    warpOutsideEndOfDayTimeOutTicks = 0;
+
+
             }
             if (Game1.timeOfDay == 2600)
             {
-                Game1.player.startToPassOut();
+                warpOutsideEndOfDayTimeOutTicks += 1;
+                if (warpOutsideEndOfDayTimeOutTicks >= 30)
+                {
+                    Game1.paused = false;
+                    Game1.warpFarmer("Farm", 64, 15, false);
+                }
+                
             }
 
         }
