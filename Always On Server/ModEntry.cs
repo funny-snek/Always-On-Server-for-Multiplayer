@@ -123,7 +123,7 @@ namespace Always_On_Server
         private int timeOutTicksForReset;
         private int festivalTicksForReset;
         private int shippingMenuTimeoutTicks;
-        private int warpOutsideEndOfDayTimeOutTicks;
+        
         
         SDate currentDateForReset = SDate.Now();
         SDate danceOfJelliesForReset = new SDate(28, "summer");
@@ -1633,18 +1633,16 @@ namespace Always_On_Server
                     Game1.options.setServerMode("online");
                     timeOutTicksForReset = 0;
                     shippingMenuTimeoutTicks = 0;
-                    warpOutsideEndOfDayTimeOutTicks = 0;
+                    
 
 
             }
             if (Game1.timeOfDay == 2600)
             {
-                warpOutsideEndOfDayTimeOutTicks += 1;
-                if (warpOutsideEndOfDayTimeOutTicks >= 30)
-                {
+                
                     Game1.paused = false;
-                    Game1.warpFarmer("Farm", 64, 15, false);
-                }
+                    
+               
                 
             }
 
