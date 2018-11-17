@@ -1059,12 +1059,12 @@ namespace Always_On_Server
                             {
                                 if (x is Chest chest)
                                 {
-                                    
-                                    if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
+                                    //removed, the game stores color id's strangely, other colored chests randomly unlocking
+                                    /*if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
                                     {
                                         return;
-                                    }
-                                    else
+                                    }*/
+                                    //else
                                     {
                                         chest.mutex.RequestLock();
                                     }
