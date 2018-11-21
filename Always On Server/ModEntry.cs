@@ -164,13 +164,13 @@ namespace Always_On_Server
             if (Game1.IsServer)
             {
                 //store levels, set in game levels to max
-                var data = this.Helper.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
+                var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
                 data.FarmingLevel = Game1.player.FarmingLevel;
                 data.MiningLevel = Game1.player.MiningLevel;
                 data.ForagingLevel = Game1.player.ForagingLevel;
                 data.FishingLevel = Game1.player.FishingLevel;
                 data.CombatLevel = Game1.player.CombatLevel;
-                this.Helper.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
+                this.Helper.Data.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
                 Game1.player.FarmingLevel = 10;
                 Game1.player.MiningLevel = 10;
                 Game1.player.ForagingLevel = 10;
@@ -266,13 +266,13 @@ namespace Always_On_Server
 
 
                     // store levels, set in game levels to max
-                    var data = this.Helper.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
+                    var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
                     data.FarmingLevel = Game1.player.FarmingLevel;
                     data.MiningLevel = Game1.player.MiningLevel;
                     data.ForagingLevel = Game1.player.ForagingLevel;
                     data.FishingLevel = Game1.player.FishingLevel;
                     data.CombatLevel = Game1.player.CombatLevel;
-                    this.Helper.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
+                    this.Helper.Data.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
                     Game1.player.FarmingLevel = 10;
                     Game1.player.MiningLevel = 10;
                     Game1.player.ForagingLevel = 10;
@@ -292,7 +292,7 @@ namespace Always_On_Server
                     Game1.addHUDMessage(new HUDMessage("Server Mode Off!", ""));
 
                     //set player levels to stored levels
-                    var data = this.Helper.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
+                    var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
                     Game1.player.FarmingLevel = data.FarmingLevel;
                     Game1.player.MiningLevel = data.MiningLevel;
                     Game1.player.ForagingLevel = data.ForagingLevel;
@@ -323,13 +323,13 @@ namespace Always_On_Server
 
                         Game1.options.pauseWhenOutOfFocus = false;
                         // store levels, set in game levels to max
-                        var data = this.Helper.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
+                        var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
                         data.FarmingLevel = Game1.player.FarmingLevel;
                         data.MiningLevel = Game1.player.MiningLevel;
                         data.ForagingLevel = Game1.player.ForagingLevel;
                         data.FishingLevel = Game1.player.FishingLevel;
                         data.CombatLevel = Game1.player.CombatLevel;
-                        this.Helper.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
+                        this.Helper.Data.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
                         Game1.player.FarmingLevel = 10;
                         Game1.player.MiningLevel = 10;
                         Game1.player.ForagingLevel = 10;
@@ -347,7 +347,7 @@ namespace Always_On_Server
                         Game1.displayHUD = true;
                         Game1.addHUDMessage(new HUDMessage("Server Mode Off!", ""));
                         //set player levels to stored levels
-                        var data = this.Helper.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
+                        var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
                         Game1.player.FarmingLevel = data.FarmingLevel;
                         Game1.player.MiningLevel = data.MiningLevel;
                         Game1.player.ForagingLevel = data.ForagingLevel;
@@ -355,6 +355,16 @@ namespace Always_On_Server
                         Game1.player.CombatLevel = data.CombatLevel;
                         //////////////////////////////////////
 
+                    }
+                    //warp farmer on button press
+                    if (Game1.player.currentLocation is FarmHouse)
+                    {
+                        Game1.warpFarmer("Farm", 64, 15, false);
+                    }
+                    else
+                    {
+                        getBedCoordinates();
+                        Game1.warpFarmer("Farmhouse", bedX, bedY, false);
                     }
                 }
             }
@@ -1068,6 +1078,10 @@ namespace Always_On_Server
                                     {
                                         chest.mutex.RequestLock();
                                     }
+                                }
+                                if (x is Chest fridge)
+                                {
+                                    fridge.mutex.RequestLock();
                                 }
                             }
                         }
