@@ -1093,12 +1093,12 @@ namespace Always_On_Server
                 //petchoice
                 if (!Game1.player.hasPet())
                 {
-                    this.Helper.Reflection.GetMethod(new Event(), "namePet", true).Invoke(this.Config.petname.Substring(0, 9));
+                    this.Helper.Reflection.GetMethod(new Event(), "namePet", true).Invoke(this.Config.petname.Substring(0));
                 }
                 if (Game1.player.hasPet() && Game1.getCharacterFromName(Game1.player.getPetName(), false) is Pet pet)
                 {
-                    pet.Name = this.Config.petname.Substring(0, 9);
-                    pet.displayName = this.Config.petname.Substring(0, 9);
+                    pet.Name = this.Config.petname.Substring(0);
+                    pet.displayName = this.Config.petname.Substring(0);
                 }
                 //cave choice unlock 
                 if (!Game1.player.eventsSeen.Contains(65))
@@ -1335,7 +1335,7 @@ namespace Always_On_Server
                     }
                 }
 
-                // flower dance turned off causes game crashes with more than 4 players
+                
                 void FlowerDance()
                 {
                     if (currentTime >= 900 && currentTime <= 1400)
