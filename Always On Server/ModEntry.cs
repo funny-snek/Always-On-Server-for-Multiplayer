@@ -116,10 +116,27 @@ namespace Always_On_Server
 
         private bool winterFeastAvailable = false;
         private int winterFeastCountDown;
+        //variables for current time and date
+        int currentTime = Game1.timeOfDay;
+        SDate currentDate = SDate.Now();
+        SDate eggFestival = new SDate(13, "spring");
+        SDate dayAfterEggFestival = new SDate(14, "spring");
+        SDate flowerDance = new SDate(24, "spring");
+        SDate luau = new SDate(11, "summer");
+        SDate danceOfJellies = new SDate(28, "summer");
+        SDate stardewValleyFair = new SDate(16, "fall");
+        SDate spiritsEve = new SDate(27, "fall");
+        SDate festivalOfIce = new SDate(8, "winter");
+        SDate feastOfWinterStar = new SDate(25, "winter");
+        SDate grampasGhost = new SDate(1, "spring", 3);
+        ///////////////////////////////////////////////////////
+
+
+
+
 
         //variables for timeout reset code
-        private int gameTicksForReset;
-        private int gameCounterForReset;
+        
         private int timeOutTicksForReset;
         private int festivalTicksForReset;
         private int shippingMenuTimeoutTicks;
@@ -147,6 +164,7 @@ namespace Always_On_Server
             TimeEvents.TimeOfDayChanged += this.TimeEvents_TimeOfDayChanged; // Time of day change handler
             TimeEvents.TimeOfDayChanged += this.FullAutoHandler; //handles various events the host normally has to click through
             GameEvents.UpdateTick += this.InstantAutoHandler; //handles various events that should occur as soon as they are available
+            GameEvents.OneSecondTick += ClientCommands; //handles commands that make the host sleep, go to festivals, start festival events
             ControlEvents.KeyPressed += this.ControlEvents_KeyPressed;
             GraphicsEvents.OnPostRenderEvent += this.GraphicsEvents_OnPostRenderEvent;
             MultiplayerEvents.BeforeMainSync += Sync; //used bc only thing that gets throug save window
@@ -376,8 +394,111 @@ namespace Always_On_Server
             if (this.Config.festivalsOn == false)
                 return;
         }
+        //handles client commands for sleep, go to festival, start festival event.
+        private void ClientCommands(object sender, EventArgs e)
+        {
+            
+            if (!Context.IsWorldReady)
+                return;
+            if (!IsEnabled)
+                return;
 
 
+            List<ChatMessage> messages = this.Helper.Reflection.GetField<List<ChatMessage>>(Game1.chatBox, "messages").GetValue();
+            if (messages.Count > 0)
+            {
+                var messagetoconvert = messages[messages.Count - 1].message;
+                string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert);
+                string lastFragment = actualmessage.Split(' ')[1];
+                
+                if (lastFragment != null)
+                {
+                    if (lastFragment == "!sleep")
+                    {
+                        if (currentTime >= this.Config.timeOfDayToSleep)
+                        {
+                            GoToBed();
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText($"Tring to go to bed.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        else
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText($"It's too early.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText($"Try after {this.Config.timeOfDayToSleep}.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                    }
+                    else if (lastFragment == "!festival")
+                    {
+                        Game1.chatBox.activate();
+                        Game1.chatBox.setText($"Tring to go to Festival.");
+                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
+
+                        if (currentDate == eggFestival)
+                        {
+                            EggFestival();
+                        }
+                        else if (currentDate == flowerDance)
+                        {
+                            FlowerDance();
+                        }
+                        else if (currentDate == luau)
+                        {
+                            Luau();
+                        }
+                        else if (currentDate == danceOfJellies)
+                        {
+                            DanceOfTheMoonlightJellies();
+                        }
+                        else if (currentDate == stardewValleyFair)
+                        {
+                            StardewValleyFair();
+                        }
+                        else if (currentDate == spiritsEve)
+                        {
+                            SpiritsEve();
+                        }
+                        else if (currentDate == festivalOfIce)
+                        {
+                            FestivalOfIce();
+                        }
+                        else if (currentDate == feastOfWinterStar)
+                        {
+                            FeastOfWinterStar();
+                        }
+                        else
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText($"Festival Not Ready.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                    }
+                    else if (lastFragment == "!event")
+                    {
+                        if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival == true)
+                        {
+                            this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText($"Tring to start main event.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        else
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText($"I'm not at a Festival.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                    }
+
+                }
+            }
+        }
+
+        
 
         private void GameEvents_OneSecondTick(object sender, EventArgs e)
         {
@@ -385,9 +506,10 @@ namespace Always_On_Server
 
             if (IsEnabled == false) // server toggle
             {
-
                 Game1.paused = false;
                 return;
+
+
             }
 
 
@@ -396,25 +518,29 @@ namespace Always_On_Server
             if (this.Config.clientsCanPause == true)
             {
                 List<ChatMessage> messages = this.Helper.Reflection.GetField<List<ChatMessage>>(Game1.chatBox, "messages").GetValue();
-                string[] messageDumpString = messages.SelectMany(p => p.message).Select(p => p.message).ToArray();
-                string lastFragment = messageDumpString.LastOrDefault()?.Split(':').LastOrDefault()?.Trim();
-
-                if (lastFragment != null && lastFragment == "!pause")
+                if (messages.Count > 0)
                 {
-                    Game1.netWorldState.Value.IsPaused = true;
-                    clientPaused = true;
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"Game Paused");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    var messagetoconvert = messages[messages.Count - 1].message;
+                    string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert);
+                    string lastFragment = actualmessage.Split(' ')[1];
 
-                }
-                if (lastFragment != null && lastFragment == "!unpause")
-                {
-                    Game1.netWorldState.Value.IsPaused = false;
-                    clientPaused = false;
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"Game UnPaused");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    if (lastFragment != null && lastFragment == "!pause")
+                    {
+                        Game1.netWorldState.Value.IsPaused = true;
+                        clientPaused = true;
+                        Game1.chatBox.activate();
+                        Game1.chatBox.setText($"Game Paused");
+                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
+
+                    }
+                    if (lastFragment != null && lastFragment == "!unpause")
+                    {
+                        Game1.netWorldState.Value.IsPaused = false;
+                        clientPaused = false;
+                        Game1.chatBox.activate();
+                        Game1.chatBox.setText($"Game UnPaused");
+                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    }
                 }
             }
 
@@ -865,15 +991,7 @@ namespace Always_On_Server
         //Pause game if no clients Code
         private void NoClientsPause()
         {
-            var currentDate = SDate.Now();
-            var eggFestival = new SDate(13, "spring");
-            var flowerDance = new SDate(24, "spring");
-            var luau = new SDate(11, "summer");
-            var danceOfJellies = new SDate(28, "summer");
-            var stardewValleyFair = new SDate(16, "fall");
-            var spiritsEve = new SDate(27, "fall");
-            var festivalOfIce = new SDate(8, "winter");
-            var feastOfWinterStar = new SDate(25, "winter");
+            
 
 
 
@@ -909,18 +1027,6 @@ namespace Always_On_Server
         {
             if (IsEnabled == true)
             {
-
-                var currentTime = Game1.timeOfDay;
-                var currentDate = SDate.Now();
-                var grampasGhost = new SDate(1, "spring", 3);
-                var eggFestival = new SDate(13, "spring");
-                var flowerDance = new SDate(24, "spring");
-                var luau = new SDate(11, "summer");
-                var danceOfJellies = new SDate(28, "summer");
-                var stardewValleyFair = new SDate(16, "fall");
-                var spiritsEve = new SDate(27, "fall");
-                var festivalOfIce = new SDate(8, "winter");
-                var feastOfWinterStar = new SDate(25, "winter");
 
                 if (currentDate != grampasGhost && currentDate != eggFestival && currentDate != flowerDance && currentDate != luau && currentDate != danceOfJellies && currentDate != stardewValleyFair && currentDate != spiritsEve && currentDate != festivalOfIce && currentDate != feastOfWinterStar)
                 {
@@ -1137,8 +1243,10 @@ namespace Always_On_Server
 
 
         // auto-sleep and Holiday code
-        private void TimeEvents_TimeOfDayChanged(object sender, EventArgs e)
+        public void TimeEvents_TimeOfDayChanged(object sender, EventArgs e)
         {
+            currentTime = Game1.timeOfDay;
+            currentDate = SDate.Now();
             if (IsEnabled == false) // server toggle
                 return;
 
@@ -1149,17 +1257,6 @@ namespace Always_On_Server
 
             if (gameClockTicks >= 3)
             {
-                var currentTime = Game1.timeOfDay;
-                var currentDate = SDate.Now();
-                var eggFestival = new SDate(13, "spring");
-                var dayAfterEggFestival = new SDate(14, "spring");
-                var flowerDance = new SDate(24, "spring");
-                var luau = new SDate(11, "summer");
-                var danceOfJellies = new SDate(28, "summer");
-                var stardewValleyFair = new SDate(16, "fall");
-                var spiritsEve = new SDate(27, "fall");
-                var festivalOfIce = new SDate(8, "winter");
-                var feastOfWinterStar = new SDate(25, "winter");
 
 
 
@@ -1196,7 +1293,7 @@ namespace Always_On_Server
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
 
                     }
-                     FlowerDance();
+                    FlowerDance();
                 }
 
                 else if (currentDate == luau && numPlayers >= 1)
@@ -1300,12 +1397,12 @@ namespace Always_On_Server
                     GoToBed();
                 }
 
-                gameClockTicks = 0;   
+                gameClockTicks = 0;
+            }
 
+        }
 
-
-
-                void EggFestival()
+                public void EggFestival()
                 {
                     if (currentTime >= 900 && currentTime <= 1400)
                     {
@@ -1336,7 +1433,7 @@ namespace Always_On_Server
                 }
 
                 
-                void FlowerDance()
+                public void FlowerDance()
                 {
                     if (currentTime >= 900 && currentTime <= 1400)
                     {
@@ -1362,7 +1459,7 @@ namespace Always_On_Server
                     }
                 }
 
-                void Luau()
+                public void Luau()
                 {
 
                     if (currentTime >= 900 && currentTime <= 1400)
@@ -1390,14 +1487,10 @@ namespace Always_On_Server
                     }
                 }
 
-                void DanceOfTheMoonlightJellies()
+                public void DanceOfTheMoonlightJellies()
                 {
 
-                    /*if (currentTime < 2200)  //triggers weird bug if you try to go to sleep then jump to a festival. Maybe try to fix in future?
-                    {
-                        GoToBed();
-                    }*/
-
+                    
                     if (currentTime >= 2200 && currentTime <= 2400)
                     {
 
@@ -1424,7 +1517,7 @@ namespace Always_On_Server
                     }
                 }
 
-                void StardewValleyFair()
+                public void StardewValleyFair()
                 {
                     if (currentTime >= 900 && currentTime <= 1500)
                     {
@@ -1455,12 +1548,9 @@ namespace Always_On_Server
                     }
                 }
 
-                void SpiritsEve()
+                public void SpiritsEve()
                 {
-                    /*if (currentTime < 2200)  //triggers weird bug if you try to go to sleep then jump to a festival. Maybe try to fix in future?
-                        {
-                            GoToBed();
-                        }*/
+                    
 
                     if (currentTime >= 2200 && currentTime <= 2350)
                     {
@@ -1490,7 +1580,7 @@ namespace Always_On_Server
                     }
                 }
 
-                void FestivalOfIce()
+                public void FestivalOfIce()
                 {
                     if (currentTime >= 900 && currentTime <= 1400)
                     {
@@ -1518,7 +1608,7 @@ namespace Always_On_Server
                     }
                 }
 
-                void FeastOfWinterStar()
+                public void FeastOfWinterStar()
                 {
                     if (currentTime >= 900 && currentTime <= 1400)
                     {
@@ -1546,10 +1636,10 @@ namespace Always_On_Server
                     }
                 }
 
-            }
+            
 
 
-        }
+        
 
         private void getBedCoordinates()
         {
@@ -1575,12 +1665,12 @@ namespace Always_On_Server
         private void GoToBed()
         {
             getBedCoordinates();
-            Game1.displayHUD = true;
-            Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-
             
-            this.Helper.Reflection.GetMethod(Game1.currentLocation, "startSleep").Invoke();
+            Game1.warpFarmer("Farmhouse", bedX, bedY, false);
+            
 
+            this.Helper.Reflection.GetMethod(Game1.currentLocation, "startSleep").Invoke();
+            Game1.displayHUD = true;
 
         }
 
