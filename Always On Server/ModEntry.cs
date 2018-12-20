@@ -1288,6 +1288,7 @@ namespace Always_On_Server
                             NetMutex playerinventory = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
                             playerinventory.RequestLock();
 
+                            //locks all chests
                             foreach (StardewValley.Object x in cabin.objects.Values)
                             {
                                 if (x is Chest chest)
