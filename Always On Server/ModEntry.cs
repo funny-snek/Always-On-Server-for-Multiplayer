@@ -1284,8 +1284,9 @@ namespace Always_On_Server
                     {
                         if (farmer.currentLocation is Cabin cabin && farmer != cabin.owner)
                         {
-                            NetMutex mutex = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
-                            mutex.RequestLock();
+                            //locks player inventories
+                            NetMutex playerinventory = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
+                            playerinventory.RequestLock();
 
                             foreach (StardewValley.Object x in cabin.objects.Values)
                             {
