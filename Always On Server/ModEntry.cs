@@ -1,73 +1,22 @@
 ﻿using System;
-using StardewModdingAPI;
-using StardewModdingAPI.Events;
-using StardewValley;
-using System.IO;
-using StardewValley.Menus;
-using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using StardewModdingAPI.Utilities;
-using StardewValley.Locations;
+using Always_On_Server.Framework;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
+using StardewValley;
 using StardewValley.Characters;
-using StardewValley.Objects;
+using StardewValley.Locations;
+using StardewValley.Menus;
 using StardewValley.Network;
+using StardewValley.Objects;
 
 namespace Always_On_Server
 {
-    class ModConfig
-    {
-        public string serverHotKey { get; set; } = Keys.F9.ToString();
-
-        public int profitmargin { get; set; } = 100;
-        public int upgradeHouse { get; set; } = 0;
-        public string petname { get; set; } = "Funnysnek";
-        public bool farmcavechoicemushrooms { get; set; } = true;
-        public bool communitycenterrun { get; set; } = true;
-        public int timeOfDayToSleep { get; set; } = 2200;
-
-        public bool lockPlayerChests { get; set; } = true;
-        public bool clientsCanPause { get; set; } = false;
-        public bool copyInviteCodeToClipboard { get; set; } = true;
-        
-
-        public bool festivalsOn { get; set; } = true;
-        public int eggHuntCountDownConfig { get; set; } = 60;
-        public int flowerDanceCountDownConfig { get; set; } = 60;
-        public int luauSoupCountDownConfig { get; set; } = 60;
-        public int jellyDanceCountDownConfig { get; set; } = 60;
-        public int grangeDisplayCountDownConfig { get; set; } = 60;
-        public int iceFishingCountDownConfig { get; set; } = 60;
-
-        public int endofdayTimeOut { get; set; } = 300;
-        public int fairTimeOut { get; set; } = 1200;
-        public int spiritsEveTimeOut { get; set; } = 900;
-        public int winterStarTimeOut { get; set; } = 900;
-
-        public int eggFestivalTimeOut { get; set; } = 120;
-        public int flowerDanceTimeOut { get; set; } = 120;
-        public int luauTimeOut { get; set; } = 120;
-        public int danceOfJelliesTimeOut { get; set; } = 120;
-        public int festivalOfIceTimeOut { get; set; } = 120;
-        
-    }
-
-    class ModData
-    {
-        public int FarmingLevel { get; set; }
-        public int MiningLevel { get; set; }
-        public int ForagingLevel { get; set; }
-        public int FishingLevel { get; set; }
-        public int CombatLevel { get; set; }
-        
-    }
-
-
-
-
-
     public class ModEntry : Mod
     {
         /// <summary>The mod configuration from the player.</summary>
@@ -82,7 +31,7 @@ namespace Always_On_Server
         public bool clientPaused = false;
         private string inviteCode = "a";
         private string inviteCodeTXT = "a";
-        
+
         //debug tools
         private bool debug = false;
         private bool shippingMenuActive = false;
@@ -136,12 +85,12 @@ namespace Always_On_Server
 
 
         //variables for timeout reset code
-        
+
         private int timeOutTicksForReset;
         private int festivalTicksForReset;
         private int shippingMenuTimeoutTicks;
-        
-        
+
+
         SDate currentDateForReset = SDate.Now();
         SDate danceOfJelliesForReset = new SDate(28, "summer");
         SDate spiritsEveForReset = new SDate(27, "fall");
@@ -261,7 +210,7 @@ namespace Always_On_Server
                 }
             }
         }
-        
+
 
         // toggles server on/off with console command "server"
         private void ServerToggle(string command, string[] args)
@@ -273,7 +222,7 @@ namespace Always_On_Server
                     Helper.ReadConfig<ModConfig>();
                     IsEnabled = true;
 
-                    
+
                     this.Monitor.Log("Server Mode On!", LogLevel.Info);
                     Game1.chatBox.addInfoMessage("The Host is in Server Mode!");
 
@@ -335,7 +284,7 @@ namespace Always_On_Server
                         IsEnabled = true;
                         this.Monitor.Log("The server is on!", LogLevel.Info);
                         Game1.chatBox.addInfoMessage("The Host is in Server Mode!");
-                        
+
                         Game1.displayHUD = true;
                         Game1.addHUDMessage(new HUDMessage("Server Mode On!", ""));
 
@@ -361,7 +310,7 @@ namespace Always_On_Server
                         this.Monitor.Log("The server is off!", LogLevel.Info);
 
                         Game1.chatBox.addInfoMessage("The Host has returned!");
-                        
+
                         Game1.displayHUD = true;
                         Game1.addHUDMessage(new HUDMessage("Server Mode Off!", ""));
                         //set player levels to stored levels
@@ -397,7 +346,7 @@ namespace Always_On_Server
         //handles client commands for sleep, go to festival, start festival event.
         private void ClientCommands(object sender, EventArgs e)
         {
-            
+
             if (!Context.IsWorldReady)
                 return;
             if (!IsEnabled)
@@ -410,7 +359,7 @@ namespace Always_On_Server
                 var messagetoconvert = messages[messages.Count - 1].message;
                 string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert);
                 string lastFragment = actualmessage.Split(' ')[1];
-                
+
                 if (lastFragment != null)
                 {
                     if (lastFragment == "!sleep")
@@ -441,7 +390,7 @@ namespace Always_On_Server
                         if (currentDate == eggFestival)
                         {
                             EggFestival();
-                            
+
                         }
                         else if (currentDate == flowerDance)
                         {
@@ -579,7 +528,7 @@ namespace Always_On_Server
             }
         }
 
-        
+
 
         private void GameEvents_OneSecondTick(object sender, EventArgs e)
         {
@@ -594,7 +543,7 @@ namespace Always_On_Server
             }
 
 
-            NoClientsPause();  
+            NoClientsPause();
 
             if (this.Config.clientsCanPause == true)
             {
@@ -630,7 +579,7 @@ namespace Always_On_Server
             //Invite Code Copier 
             if (this.Config.copyInviteCodeToClipboard == true)
             {
-                
+
                 if (Game1.options.enableServer == true)
                 {
                     if (!String.Equals(inviteCode, Game1.server.getInviteCode()))
@@ -709,12 +658,12 @@ namespace Always_On_Server
             //also moves player around, this seems to free host from random bugs sometimes
             if (IsEnabled == true) // server toggle
             {
-                
+
                 if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is DialogueBox)
                 {
-                    
-                    Game1.activeClickableMenu.receiveLeftClick(10,10, true);
-                    
+
+                    Game1.activeClickableMenu.receiveLeftClick(10, 10, true);
+
                 }
                 if (Game1.CurrentEvent != null && Game1.CurrentEvent.skippable == true)
                 {
@@ -798,10 +747,10 @@ namespace Always_On_Server
                 }
             }
 
-            
-             //flowerDance event
-             if (flowerDanceAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-             {
+
+            //flowerDance event
+            if (flowerDanceAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            {
                 if (eventCommandUsed == true)
                 {
                     flowerDanceCountDown = this.Config.flowerDanceCountDownConfig;
@@ -810,35 +759,35 @@ namespace Always_On_Server
 
                 flowerDanceCountDown += 1;
 
-                 float chatFlower = this.Config.flowerDanceCountDownConfig / 60f;
-                 if (flowerDanceCountDown == 1)
-                 {
-                     Game1.chatBox.activate();
-                     Game1.chatBox.setText($"The Flower Dance will begin in {chatFlower:0.#} minutes.");
-                     Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                 }
+                float chatFlower = this.Config.flowerDanceCountDownConfig / 60f;
+                if (flowerDanceCountDown == 1)
+                {
+                    Game1.chatBox.activate();
+                    Game1.chatBox.setText($"The Flower Dance will begin in {chatFlower:0.#} minutes.");
+                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                }
 
-                 if (flowerDanceCountDown == this.Config.flowerDanceCountDownConfig + 1)
-                 {
-                     this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
-                 }
-                 if (flowerDanceCountDown >= this.Config.flowerDanceCountDownConfig + 5)
-                 {
-                     if (Game1.activeClickableMenu != null)
-                     {
+                if (flowerDanceCountDown == this.Config.flowerDanceCountDownConfig + 1)
+                {
+                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                }
+                if (flowerDanceCountDown >= this.Config.flowerDanceCountDownConfig + 5)
+                {
+                    if (Game1.activeClickableMenu != null)
+                    {
                         // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
-                     }
+                    }
 
-                     //festival timeout
+                    //festival timeout
                     festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.flowerDanceTimeOut+90)
+                    if (festivalTicksForReset >= this.Config.flowerDanceTimeOut + 90)
                     {
                         Game1.options.setServerMode("offline");
                     }
                     ///////////////////////////////////////////////
 
-                 }
-             }
+                }
+            }
 
             //luauSoup event
             if (luauSoupAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
@@ -880,7 +829,7 @@ namespace Always_On_Server
                     }
                     //festival timeout
                     festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.luauTimeOut+80)
+                    if (festivalTicksForReset >= this.Config.luauTimeOut + 80)
                     {
                         Game1.options.setServerMode("offline");
                     }
@@ -917,11 +866,11 @@ namespace Always_On_Server
                 {
                     if (Game1.activeClickableMenu != null)
                     {
-                       // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
                     }
                     //festival timeout
                     festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.danceOfJelliesTimeOut+180)
+                    if (festivalTicksForReset >= this.Config.danceOfJelliesTimeOut + 180)
                     {
                         Game1.options.setServerMode("offline");
                     }
@@ -942,7 +891,7 @@ namespace Always_On_Server
                 grangeDisplayCountDown += 1;
                 festivalTicksForReset += 1;
                 //festival timeout code
-                if (festivalTicksForReset == this.Config.fairTimeOut-120)
+                if (festivalTicksForReset == this.Config.fairTimeOut - 120)
                 {
                     Game1.chatBox.activate();
                     Game1.chatBox.setText("2 minutes to the exit or");
@@ -978,7 +927,7 @@ namespace Always_On_Server
                         Game1.warpFarmer("Farmhouse", bedX, bedY, false);
                         Game1.timeOfDay = 2200;
                         Game1.shouldTimePass();
-                        
+
                     }), (ConfirmationDialog.behavior)null);
 
                 }
@@ -1050,7 +999,7 @@ namespace Always_On_Server
                     }
                     //festival timeout
                     festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.festivalOfIceTimeOut+180)
+                    if (festivalTicksForReset >= this.Config.festivalOfIceTimeOut + 180)
                     {
                         Game1.options.setServerMode("offline");
                     }
@@ -1107,7 +1056,7 @@ namespace Always_On_Server
         //Pause game if no clients Code
         private void NoClientsPause()
         {
-            
+
 
 
 
@@ -1139,7 +1088,7 @@ namespace Always_On_Server
 
 
         //handles various events that the host normally has to click through
-        private void FullAutoHandler(object sender, EventArgs e) 
+        private void FullAutoHandler(object sender, EventArgs e)
         {
             if (IsEnabled == true)
             {
@@ -1156,7 +1105,7 @@ namespace Always_On_Server
                     }
                     if (currentTime == 630)
                     {
-                        
+
                         //rustkey-sewers unlock
                         if (Game1.player.hasRustyKey == false)
                         {
@@ -1171,7 +1120,7 @@ namespace Always_On_Server
                             }
                         }
 
-                        
+
                         //community center complete
                         if (this.Config.communitycenterrun == true)
                         {
@@ -1269,7 +1218,7 @@ namespace Always_On_Server
                     }
 
                 }
-                
+
             }
         }
         private void InstantAutoHandler(object sender, EventArgs e)
@@ -1278,7 +1227,7 @@ namespace Always_On_Server
             if (IsEnabled == true)
             {
                 //lockPlayerChests
-                if(this.Config.lockPlayerChests == true)
+                if (this.Config.lockPlayerChests == true)
                 {
                     foreach (Farmer farmer in Game1.getOnlineFarmers())
                     {
@@ -1373,7 +1322,7 @@ namespace Always_On_Server
             festivalOfIce = new SDate(8, "winter");
             feastOfWinterStar = new SDate(25, "winter");
             grampasGhost = new SDate(1, "spring", 3);
-            
+
             if (IsEnabled == false) // server toggle
                 return;
 
@@ -1529,244 +1478,244 @@ namespace Always_On_Server
 
         }
 
-            public void EggFestival()
-            {
-                if (currentTime >= 900 && currentTime <= 1400)
-                {
-
-
-
-                    //teleports to egg festival
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Town", 1, 20, 1);
-
-                    }), (ConfirmationDialog.behavior)null);
-
-                    eggHuntAvailable = true;
-
-                }
-                else if (currentTime >= 1410)
-                {
-
-                    eggHuntAvailable = false;
-                    Game1.options.setServerMode("online");
-                    eggHuntCountDown = 0;
-                    festivalTicksForReset = 0;
-                    GoToBed();
-                }
-            }
-
-                
-            public void FlowerDance()
-            {
-                if (currentTime >= 900 && currentTime <= 1400)
-                {
-
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Forest", 1, 20, 1);
-                    }), (ConfirmationDialog.behavior)null);
-
-                    flowerDanceAvailable = true;
-
-                }
-                else if (currentTime >= 1410 && currentTime >= this.Config.timeOfDayToSleep)
-                {
-                        
-                    flowerDanceAvailable = false;
-                    Game1.options.setServerMode("online");
-                    flowerDanceCountDown = 0;
-                    festivalTicksForReset = 0;
-                    GoToBed();
-                }
-            }
-
-            public void Luau()
+        public void EggFestival()
+        {
+            if (currentTime >= 900 && currentTime <= 1400)
             {
 
-                if (currentTime >= 900 && currentTime <= 1400)
+
+
+                //teleports to egg festival
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
                 {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Town", 1, 20, 1);
 
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Beach", 1, 20, 1);
+                }), (ConfirmationDialog.behavior)null);
 
-                    }), (ConfirmationDialog.behavior)null);
+                eggHuntAvailable = true;
 
-                    luauSoupAvailable = true;
-
-                }
-                else if (currentTime >= 1410)
-                {
-
-                    luauSoupAvailable = false;
-                    Game1.options.setServerMode("online");
-                    luauSoupCountDown = 0;
-                    festivalTicksForReset = 0;
-                    GoToBed();
-                }
             }
-
-            public void DanceOfTheMoonlightJellies()
+            else if (currentTime >= 1410)
             {
 
-                    
-                if (currentTime >= 2200 && currentTime <= 2400)
-                {
-
-
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Beach", 1, 20, 1);
-
-                    }), (ConfirmationDialog.behavior)null);
-
-                    jellyDanceAvailable = true;
-
-                }
-                else if (currentTime >= 2410)
-                {
-
-                    jellyDanceAvailable = false;
-                    Game1.options.setServerMode("online");
-                    jellyDanceCountDown = 0;
-                    festivalTicksForReset = 0;
-                    GoToBed();
-                }
+                eggHuntAvailable = false;
+                Game1.options.setServerMode("online");
+                eggHuntCountDown = 0;
+                festivalTicksForReset = 0;
+                GoToBed();
             }
+        }
 
-            public void StardewValleyFair()
+
+        public void FlowerDance()
+        {
+            if (currentTime >= 900 && currentTime <= 1400)
             {
-                if (currentTime >= 900 && currentTime <= 1500)
+
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
                 {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Forest", 1, 20, 1);
+                }), (ConfirmationDialog.behavior)null);
 
+                flowerDanceAvailable = true;
 
-
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Town", 1, 20, 1);
-
-                    }), (ConfirmationDialog.behavior)null);
-
-                    grangeDisplayAvailable = true;
-
-                }
-                else if (currentTime >= 1510)
-                {
-
-                    Game1.displayHUD = true;
-                    grangeDisplayAvailable = false;
-                    Game1.options.setServerMode("online");
-                    grangeDisplayCountDown = 0;
-                    festivalTicksForReset = 0;
-                        
-                    GoToBed();
-                }
             }
-
-            public void SpiritsEve()
+            else if (currentTime >= 1410 && currentTime >= this.Config.timeOfDayToSleep)
             {
-                    
 
-                if (currentTime >= 2200 && currentTime <= 2350)
-                {
-
-
-
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Town", 1, 20, 1);
-
-                    }), (ConfirmationDialog.behavior)null);
-
-                    goldenPumpkinAvailable = true;
-
-                }
-                else if (currentTime >= 2400)
-                {
-
-                    Game1.displayHUD = true;
-                    goldenPumpkinAvailable = false;
-                    Game1.options.setServerMode("online");
-                    goldenPumpkinCountDown = 0;
-                    festivalTicksForReset = 0;
-                    GoToBed();
-                }
+                flowerDanceAvailable = false;
+                Game1.options.setServerMode("online");
+                flowerDanceCountDown = 0;
+                festivalTicksForReset = 0;
+                GoToBed();
             }
+        }
 
-            public void FestivalOfIce()
+        public void Luau()
+        {
+
+            if (currentTime >= 900 && currentTime <= 1400)
             {
-                if (currentTime >= 900 && currentTime <= 1400)
+
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
                 {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Beach", 1, 20, 1);
 
+                }), (ConfirmationDialog.behavior)null);
 
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Forest", 1, 20, 1);
+                luauSoupAvailable = true;
 
-                    }), (ConfirmationDialog.behavior)null);
-
-                    iceFishingAvailable = true;
-
-                }
-                else if (currentTime >= 1410)
-                {
-
-                    iceFishingAvailable = false;
-                    Game1.options.setServerMode("online");
-                    iceFishingCountDown = 0;
-                    festivalTicksForReset = 0;
-                    GoToBed();
-                }
             }
-
-            public void FeastOfWinterStar()
+            else if (currentTime >= 1410)
             {
-                if (currentTime >= 900 && currentTime <= 1400)
-                {
 
-
-                    Game1.player.team.SetLocalReady("festivalStart", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
-                    {
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Town", 1, 20, 1);
-
-                    }), (ConfirmationDialog.behavior)null);
-
-                    winterFeastAvailable = true;
-
-                }
-                else if (currentTime >= 1410)
-                {
-
-                    winterFeastAvailable = false;
-                    Game1.options.setServerMode("online");
-                    winterFeastCountDown = 0;
-                    festivalTicksForReset = 0;
-                    GoToBed();
-                }
+                luauSoupAvailable = false;
+                Game1.options.setServerMode("online");
+                luauSoupCountDown = 0;
+                festivalTicksForReset = 0;
+                GoToBed();
             }
+        }
 
-            
+        public void DanceOfTheMoonlightJellies()
+        {
 
 
-        
+            if (currentTime >= 2200 && currentTime <= 2400)
+            {
+
+
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Beach", 1, 20, 1);
+
+                }), (ConfirmationDialog.behavior)null);
+
+                jellyDanceAvailable = true;
+
+            }
+            else if (currentTime >= 2410)
+            {
+
+                jellyDanceAvailable = false;
+                Game1.options.setServerMode("online");
+                jellyDanceCountDown = 0;
+                festivalTicksForReset = 0;
+                GoToBed();
+            }
+        }
+
+        public void StardewValleyFair()
+        {
+            if (currentTime >= 900 && currentTime <= 1500)
+            {
+
+
+
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Town", 1, 20, 1);
+
+                }), (ConfirmationDialog.behavior)null);
+
+                grangeDisplayAvailable = true;
+
+            }
+            else if (currentTime >= 1510)
+            {
+
+                Game1.displayHUD = true;
+                grangeDisplayAvailable = false;
+                Game1.options.setServerMode("online");
+                grangeDisplayCountDown = 0;
+                festivalTicksForReset = 0;
+
+                GoToBed();
+            }
+        }
+
+        public void SpiritsEve()
+        {
+
+
+            if (currentTime >= 2200 && currentTime <= 2350)
+            {
+
+
+
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Town", 1, 20, 1);
+
+                }), (ConfirmationDialog.behavior)null);
+
+                goldenPumpkinAvailable = true;
+
+            }
+            else if (currentTime >= 2400)
+            {
+
+                Game1.displayHUD = true;
+                goldenPumpkinAvailable = false;
+                Game1.options.setServerMode("online");
+                goldenPumpkinCountDown = 0;
+                festivalTicksForReset = 0;
+                GoToBed();
+            }
+        }
+
+        public void FestivalOfIce()
+        {
+            if (currentTime >= 900 && currentTime <= 1400)
+            {
+
+
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Forest", 1, 20, 1);
+
+                }), (ConfirmationDialog.behavior)null);
+
+                iceFishingAvailable = true;
+
+            }
+            else if (currentTime >= 1410)
+            {
+
+                iceFishingAvailable = false;
+                Game1.options.setServerMode("online");
+                iceFishingCountDown = 0;
+                festivalTicksForReset = 0;
+                GoToBed();
+            }
+        }
+
+        public void FeastOfWinterStar()
+        {
+            if (currentTime >= 900 && currentTime <= 1400)
+            {
+
+
+                Game1.player.team.SetLocalReady("festivalStart", true);
+                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                {
+                    Game1.exitActiveMenu();
+                    Game1.warpFarmer("Town", 1, 20, 1);
+
+                }), (ConfirmationDialog.behavior)null);
+
+                winterFeastAvailable = true;
+
+            }
+            else if (currentTime >= 1410)
+            {
+
+                winterFeastAvailable = false;
+                Game1.options.setServerMode("online");
+                winterFeastCountDown = 0;
+                festivalTicksForReset = 0;
+                GoToBed();
+            }
+        }
+
+
+
+
+
 
         private void getBedCoordinates()
         {
@@ -1792,9 +1741,9 @@ namespace Always_On_Server
         private void GoToBed()
         {
             getBedCoordinates();
-            
+
             Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-            
+
 
             this.Helper.Reflection.GetMethod(Game1.currentLocation, "startSleep").Invoke();
             Game1.displayHUD = true;
@@ -1815,7 +1764,7 @@ namespace Always_On_Server
             {
                 this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "okClicked").Invoke();
             }
-            
+
         }
 
         //resets server connection after certain amount of time end of day
@@ -1824,10 +1773,10 @@ namespace Always_On_Server
 
             if (Game1.timeOfDay >= this.Config.timeOfDayToSleep || Game1.timeOfDay == 600 && currentDateForReset != danceOfJelliesForReset && currentDateForReset != spiritsEveForReset && this.Config.endofdayTimeOut != 0)
             {
-                
+
                 timeOutTicksForReset += 1;
                 var countdowntoreset = (2600 - this.Config.timeOfDayToSleep) * .01 * 6 * 7 * 60;
-                if (timeOutTicksForReset >= (countdowntoreset + (this.Config.endofdayTimeOut*60)))
+                if (timeOutTicksForReset >= (countdowntoreset + (this.Config.endofdayTimeOut * 60)))
                 {
                     Game1.options.setServerMode("offline");
                 }
@@ -1836,9 +1785,9 @@ namespace Always_On_Server
             {
                 if (Game1.timeOfDay >= 2400 || Game1.timeOfDay == 600)
                 {
-                    
+
                     timeOutTicksForReset += 1;
-                    if (timeOutTicksForReset >= (5040  +(this.Config.endofdayTimeOut * 60)))
+                    if (timeOutTicksForReset >= (5040 + (this.Config.endofdayTimeOut * 60)))
                     {
                         Game1.options.setServerMode("offline");
                     }
@@ -1847,9 +1796,9 @@ namespace Always_On_Server
             }
             if (shippingMenuActive == true && this.Config.endofdayTimeOut != 0)
             {
-                
+
                 shippingMenuTimeoutTicks += 1;
-                if (shippingMenuTimeoutTicks >= this.Config.endofdayTimeOut*60)
+                if (shippingMenuTimeoutTicks >= this.Config.endofdayTimeOut * 60)
                 {
                     Game1.options.setServerMode("offline");
                 }
@@ -1861,20 +1810,20 @@ namespace Always_On_Server
                 shippingMenuActive = false;
                 Game1.player.difficultyModifier = this.Config.profitmargin * .01f;
 
-                    Game1.options.setServerMode("online");
-                    timeOutTicksForReset = 0;
-                    shippingMenuTimeoutTicks = 0;
-                    
+                Game1.options.setServerMode("online");
+                timeOutTicksForReset = 0;
+                shippingMenuTimeoutTicks = 0;
+
 
 
             }
             if (Game1.timeOfDay == 2600)
             {
-                
-                    Game1.paused = false;
-                    
-               
-                
+
+                Game1.paused = false;
+
+
+
             }
 
         }
