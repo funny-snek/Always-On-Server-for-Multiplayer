@@ -711,19 +711,7 @@ namespace Always_On_Server
                     this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
                 }
                 if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 5)
-                {
-                    Game1.player.team.SetLocalReady("festivalEnd", true);
-                    Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
-                    {
-                        getBedCoordinates();
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-                        Game1.timeOfDay = 2200;
-                        Game1.shouldTimePass();
-
-                    });
-
-                }
+                    this.LeaveFestival();
             }
 
             //golden pumpkin maze event
@@ -743,19 +731,7 @@ namespace Always_On_Server
                 }
                 ///////////////////////////////////////////////
                 if (goldenPumpkinCountDown == 10)
-                {
-                    Game1.player.team.SetLocalReady("festivalEnd", true);
-                    Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
-                    {
-                        getBedCoordinates();
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-                        Game1.timeOfDay = 2400;
-                        Game1.shouldTimePass();
-
-                    });
-
-                }
+                    this.LeaveFestival();
             }
 
             //ice fishing event
@@ -812,27 +788,9 @@ namespace Always_On_Server
                 }
                 ///////////////////////////////////////////////
                 if (winterFeastCountDown == 10)
-                {
-                    Game1.player.team.SetLocalReady("festivalEnd", true);
-                    Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
-                    {
-                        getBedCoordinates();
-                        Game1.exitActiveMenu();
-                        Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-                        Game1.timeOfDay = 2200;
-                        Game1.shouldTimePass();
-
-                    });
-
-
-                }
+                    this.LeaveFestival();
             }
-
         }
-
-
-
-
 
 
 
@@ -990,17 +948,7 @@ namespace Always_On_Server
                             if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                             {
                                 this.SendChatMessage("Trying to leave Festival");
-
-                                Game1.player.team.SetLocalReady("festivalEnd", true);
-                                Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
-                                {
-                                    getBedCoordinates();
-                                    Game1.exitActiveMenu();
-                                    Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-                                    Game1.timeOfDay = 2200;
-                                    Game1.shouldTimePass();
-
-                                });
+                                this.LeaveFestival();
                             }
                             else
                             {
@@ -1715,6 +1663,20 @@ namespace Always_On_Server
             Game1.chatBox.activate();
             Game1.chatBox.setText(message);
             Game1.chatBox.chatBox.RecieveCommandInput('\r');
+        }
+
+        /// <summary>Leave the current festival, if any.</summary>
+        private void LeaveFestival()
+        {
+            Game1.player.team.SetLocalReady("festivalEnd", true);
+            Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
+            {
+                getBedCoordinates();
+                Game1.exitActiveMenu();
+                Game1.warpFarmer("Farmhouse", bedX, bedY, false);
+                Game1.timeOfDay = currentDate == spiritsEve ? 2400 : 2200;
+                Game1.shouldTimePass();
+            });
         }
     }
 }
