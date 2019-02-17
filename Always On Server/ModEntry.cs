@@ -14,6 +14,7 @@ using StardewValley.Locations;
 using StardewValley.Menus;
 using StardewValley.Network;
 using StardewValley.Objects;
+using SObject = StardewValley.Object;
 
 namespace Always_On_Server
 {
@@ -24,46 +25,46 @@ namespace Always_On_Server
 
         private int gameTicks; //stores 1s game ticks for pause code
         private int gameClockTicks; //stores in game clock change 
-        private int numPlayers = 0; //stores number of players
-        private bool IsEnabled = false;  //stores if the the server mod is enabled 
+        private int numPlayers; //stores number of players
+        private bool IsEnabled;  //stores if the the server mod is enabled 
         public int bedX;
         public int bedY;
-        public bool clientPaused = false;
+        public bool clientPaused;
         private string inviteCode = "a";
         private string inviteCodeTXT = "a";
 
         //debug tools
-        private bool debug = false;
-        private bool shippingMenuActive = false;
+        private bool debug;
+        private bool shippingMenuActive;
 
         private readonly Dictionary<string, int> PreviousFriendships = new Dictionary<string, int>();  //stores friendship values
 
         public int connectionsCount = 1;
 
-        private bool eventCommandUsed = false;
+        private bool eventCommandUsed;
 
-        private bool eggHuntAvailable = false; //is egg festival ready start timer for triggering eggHunt Event
-        private int eggHuntCountDown; //to trigger egghunt after set time
+        private bool eggHuntAvailable; //is egg festival ready start timer for triggering eggHunt Event
+        private int eggHuntCountDown; //to trigger egg hunt after set time
 
-        private bool flowerDanceAvailable = false;
+        private bool flowerDanceAvailable;
         private int flowerDanceCountDown;
 
-        private bool luauSoupAvailable = false;
+        private bool luauSoupAvailable;
         private int luauSoupCountDown;
 
-        private bool jellyDanceAvailable = false;
+        private bool jellyDanceAvailable;
         private int jellyDanceCountDown;
 
-        private bool grangeDisplayAvailable = false;
+        private bool grangeDisplayAvailable;
         private int grangeDisplayCountDown;
 
-        private bool goldenPumpkinAvailable = false;
+        private bool goldenPumpkinAvailable;
         private int goldenPumpkinCountDown;
 
-        private bool iceFishingAvailable = false;
+        private bool iceFishingAvailable;
         private int iceFishingCountDown;
 
-        private bool winterFeastAvailable = false;
+        private bool winterFeastAvailable;
         private int winterFeastCountDown;
         //variables for current time and date
         int currentTime = Game1.timeOfDay;
@@ -124,7 +125,6 @@ namespace Always_On_Server
 
 
 
-
         // turns on server after the game loads
         private void AfterLoad(object sender, EventArgs e)
         {
@@ -137,7 +137,7 @@ namespace Always_On_Server
                 data.ForagingLevel = Game1.player.ForagingLevel;
                 data.FishingLevel = Game1.player.FishingLevel;
                 data.CombatLevel = Game1.player.CombatLevel;
-                this.Helper.Data.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
+                this.Helper.Data.WriteJsonFile($"data/{Constants.SaveFolderName}.json", data);
                 Game1.player.FarmingLevel = 10;
                 Game1.player.MiningLevel = 10;
                 Game1.player.ForagingLevel = 10;
@@ -156,16 +156,8 @@ namespace Always_On_Server
         {
             if (Context.IsWorldReady)
             {
-                if (debug == false)
-                {
-                    debug = true;
-                    this.Monitor.Log("Server Debug On", LogLevel.Info);
-                }
-                else if (debug == true)
-                {
-                    debug = false;
-                    this.Monitor.Log("Server Debug Off", LogLevel.Info);
-                }
+                this.debug = !debug;
+                this.Monitor.Log($"Server Debug {(debug ? "On" : "Off")}", LogLevel.Info);
             }
         }
 
@@ -178,16 +170,16 @@ namespace Always_On_Server
             switch (align)
             {
                 case 0:
-                    IClickableMenu.drawTextureBox(spriteBatch, Game1.menuTexture, new Rectangle(0, 256, 60, 60), x, y, width, num + 4, Color.White * colorIntensity, 1f, true);
-                    Utility.drawTextWithShadow(spriteBatch, message, font, new Vector2((float)(x + 16), (float)(y + 16)), Game1.textColor, 1f, -1f, -1, -1, 1f, 3);
+                    IClickableMenu.drawTextureBox(spriteBatch, Game1.menuTexture, new Rectangle(0, 256, 60, 60), x, y, width, num + 4, Color.White * colorIntensity);
+                    Utility.drawTextWithShadow(spriteBatch, message, font, new Vector2(x + 16, y + 16), Game1.textColor);
                     break;
                 case 1:
-                    IClickableMenu.drawTextureBox(spriteBatch, Game1.menuTexture, new Rectangle(0, 256, 60, 60), x - width / 2, y, width, num + 4, Color.White * colorIntensity, 1f, true);
-                    Utility.drawTextWithShadow(spriteBatch, message, font, new Vector2((float)(x + 16 - width / 2), (float)(y + 16)), Game1.textColor, 1f, -1f, -1, -1, 1f, 3);
+                    IClickableMenu.drawTextureBox(spriteBatch, Game1.menuTexture, new Rectangle(0, 256, 60, 60), x - width / 2, y, width, num + 4, Color.White * colorIntensity);
+                    Utility.drawTextWithShadow(spriteBatch, message, font, new Vector2(x + 16 - width / 2, y + 16), Game1.textColor);
                     break;
                 case 2:
-                    IClickableMenu.drawTextureBox(spriteBatch, Game1.menuTexture, new Rectangle(0, 256, 60, 60), x - width, y, width, num + 4, Color.White * colorIntensity, 1f, true);
-                    Utility.drawTextWithShadow(spriteBatch, message, font, new Vector2((float)(x + 16 - width), (float)(y + 16)), Game1.textColor, 1f, -1f, -1, -1, 1f, 3);
+                    IClickableMenu.drawTextureBox(spriteBatch, Game1.menuTexture, new Rectangle(0, 256, 60, 60), x - width, y, width, num + 4, Color.White * colorIntensity);
+                    Utility.drawTextWithShadow(spriteBatch, message, font, new Vector2(x + 16 - width, y + 16), Game1.textColor);
                     break;
             }
         }
@@ -195,18 +187,18 @@ namespace Always_On_Server
         //draw a textbox in the top left corner saying Server On
         private void GraphicsEvents_OnPostRenderEvent(object sender, EventArgs e)
         {
-            if (Game1.options.enableServer == true && IsEnabled == true)
+            if (Game1.options.enableServer && IsEnabled)
             {
                 int connectionsCount = Game1.server.connectionsCount;
-                DrawTextBox(5, 100, Game1.dialogueFont, "Server Mode On", 0, 1f);
-                DrawTextBox(5, 180, Game1.dialogueFont, $"Press {this.Config.serverHotKey} On/Off", 0, 1f);
+                DrawTextBox(5, 100, Game1.dialogueFont, "Server Mode On");
+                DrawTextBox(5, 180, Game1.dialogueFont, $"Press {this.Config.serverHotKey} On/Off");
                 float profitMargin = this.Config.profitmargin;
-                DrawTextBox(5, 260, Game1.dialogueFont, $"Profit Margin: {profitMargin}%", 0, 1f);
-                DrawTextBox(5, 340, Game1.dialogueFont, $"{connectionsCount} Players Online", 0, 1f);
+                DrawTextBox(5, 260, Game1.dialogueFont, $"Profit Margin: {profitMargin}%");
+                DrawTextBox(5, 340, Game1.dialogueFont, $"{connectionsCount} Players Online");
                 if (Game1.server.getInviteCode() != null)
                 {
                     string inviteCode = Game1.server.getInviteCode();
-                    DrawTextBox(5, 420, Game1.dialogueFont, $"Invite Code: {inviteCode}", 0, 1f);
+                    DrawTextBox(5, 420, Game1.dialogueFont, $"Invite Code: {inviteCode}");
                 }
             }
         }
@@ -217,7 +209,7 @@ namespace Always_On_Server
         {
             if (Context.IsWorldReady)
             {
-                if (IsEnabled == false)
+                if (!IsEnabled)
                 {
                     Helper.ReadConfig<ModConfig>();
                     IsEnabled = true;
@@ -239,7 +231,7 @@ namespace Always_On_Server
                     data.ForagingLevel = Game1.player.ForagingLevel;
                     data.FishingLevel = Game1.player.FishingLevel;
                     data.CombatLevel = Game1.player.CombatLevel;
-                    this.Helper.Data.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
+                    this.Helper.Data.WriteJsonFile($"data/{Constants.SaveFolderName}.json", data);
                     Game1.player.FarmingLevel = 10;
                     Game1.player.MiningLevel = 10;
                     Game1.player.ForagingLevel = 10;
@@ -248,7 +240,7 @@ namespace Always_On_Server
                     ///////////////////////////////////////////
 
                 }
-                else if (IsEnabled == true)
+                else
                 {
                     IsEnabled = false;
                     this.Monitor.Log("The server off!", LogLevel.Info);
@@ -278,7 +270,7 @@ namespace Always_On_Server
             {
                 if (e.KeyPressed.ToString() == this.Config.serverHotKey)
                 {
-                    if (IsEnabled == false)
+                    if (!IsEnabled)
                     {
                         Helper.ReadConfig<ModConfig>();
                         IsEnabled = true;
@@ -296,7 +288,7 @@ namespace Always_On_Server
                         data.ForagingLevel = Game1.player.ForagingLevel;
                         data.FishingLevel = Game1.player.FishingLevel;
                         data.CombatLevel = Game1.player.CombatLevel;
-                        this.Helper.Data.WriteJsonFile<ModData>($"data/{Constants.SaveFolderName}.json", data);
+                        this.Helper.Data.WriteJsonFile($"data/{Constants.SaveFolderName}.json", data);
                         Game1.player.FarmingLevel = 10;
                         Game1.player.MiningLevel = 10;
                         Game1.player.ForagingLevel = 10;
@@ -304,7 +296,7 @@ namespace Always_On_Server
                         Game1.player.CombatLevel = 10;
                         ///////////////////////////////////////////
                     }
-                    else if (IsEnabled == true)
+                    else
                     {
                         IsEnabled = false;
                         this.Monitor.Log("The server is off!", LogLevel.Info);
@@ -340,7 +332,7 @@ namespace Always_On_Server
 
         private void FestivalsToggle()
         {
-            if (this.Config.festivalsOn == false)
+            if (!this.Config.festivalsOn)
                 return;
         }
         //handles client commands for sleep, go to festival, start festival event.
@@ -368,13 +360,13 @@ namespace Always_On_Server
                         {
                             GoToBed();
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"Tring to go to bed.");
+                            Game1.chatBox.setText("Tring to go to bed.");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
                         }
                         else
                         {
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"It's too early.");
+                            Game1.chatBox.setText("It's too early.");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
                             Game1.chatBox.activate();
                             Game1.chatBox.setText($"Try after {this.Config.timeOfDayToSleep}.");
@@ -384,7 +376,7 @@ namespace Always_On_Server
                     if (lastFragment == "!festival")
                     {
                         Game1.chatBox.activate();
-                        Game1.chatBox.setText($"Tring to go to Festival.");
+                        Game1.chatBox.setText("Tring to go to Festival.");
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
 
                         if (currentDate == eggFestival)
@@ -423,13 +415,13 @@ namespace Always_On_Server
                         else
                         {
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"Festival Not Ready.");
+                            Game1.chatBox.setText("Festival Not Ready.");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
                         }
                     }
                     if (lastFragment == "!event")
                     {
-                        if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival == true)
+                        if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                         {
                             if (currentDate == eggFestival)
                             {
@@ -475,20 +467,20 @@ namespace Always_On_Server
                         else
                         {
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"I'm not at a Festival.");
+                            Game1.chatBox.setText("I'm not at a Festival.");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
                         }
                     }
                     if (lastFragment == "!leave")
                     {
-                        if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival == true)
+                        if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                         {
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"Trying to leave Festival");
+                            Game1.chatBox.setText("Trying to leave Festival");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
 
                             Game1.player.team.SetLocalReady("festivalEnd", true);
-                            Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalEnd", true, (ConfirmationDialog.behavior)(who =>
+                            Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
                             {
                                 getBedCoordinates();
                                 Game1.exitActiveMenu();
@@ -496,12 +488,12 @@ namespace Always_On_Server
                                 Game1.timeOfDay = 2200;
                                 Game1.shouldTimePass();
 
-                            }), (ConfirmationDialog.behavior)null);
+                            });
                         }
                         else
                         {
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"I'm not at a Festival.");
+                            Game1.chatBox.setText("I'm not at a Festival.");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
                         }
                     }
@@ -510,14 +502,14 @@ namespace Always_On_Server
                         if (Game1.player.currentLocation is FarmHouse)
                         {
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"Warping to Farm.");
+                            Game1.chatBox.setText("Warping to Farm.");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
                             Game1.warpFarmer("Farm", 64, 15, false);
                         }
                         else
                         {
                             Game1.chatBox.activate();
-                            Game1.chatBox.setText($"Warping inside house.");
+                            Game1.chatBox.setText("Warping inside house.");
                             Game1.chatBox.chatBox.RecieveCommandInput('\r');
                             getBedCoordinates();
                             Game1.warpFarmer("Farmhouse", bedX, bedY, false);
@@ -532,20 +524,16 @@ namespace Always_On_Server
 
         private void GameEvents_OneSecondTick(object sender, EventArgs e)
         {
-
-
-            if (IsEnabled == false) // server toggle
+            if (!IsEnabled) // server toggle
             {
                 Game1.paused = false;
                 return;
-
-
             }
 
 
             NoClientsPause();
 
-            if (this.Config.clientsCanPause == true)
+            if (this.Config.clientsCanPause)
             {
                 List<ChatMessage> messages = this.Helper.Reflection.GetField<List<ChatMessage>>(Game1.chatBox, "messages").GetValue();
                 if (messages.Count > 0)
@@ -559,7 +547,7 @@ namespace Always_On_Server
                         Game1.netWorldState.Value.IsPaused = true;
                         clientPaused = true;
                         Game1.chatBox.activate();
-                        Game1.chatBox.setText($"Game Paused");
+                        Game1.chatBox.setText("Game Paused");
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
 
                     }
@@ -568,7 +556,7 @@ namespace Always_On_Server
                         Game1.netWorldState.Value.IsPaused = false;
                         clientPaused = false;
                         Game1.chatBox.activate();
-                        Game1.chatBox.setText($"Game UnPaused");
+                        Game1.chatBox.setText("Game UnPaused");
                         Game1.chatBox.chatBox.RecieveCommandInput('\r');
                     }
                 }
@@ -577,10 +565,10 @@ namespace Always_On_Server
 
 
             //Invite Code Copier 
-            if (this.Config.copyInviteCodeToClipboard == true)
+            if (this.Config.copyInviteCodeToClipboard)
             {
 
-                if (Game1.options.enableServer == true)
+                if (Game1.options.enableServer)
                 {
                     if (!String.Equals(inviteCode, Game1.server.getInviteCode()))
                     {
@@ -591,7 +579,7 @@ namespace Always_On_Server
             }
 
             //write code to a InviteCode.txt in the Always On Server mod folder
-            if (Game1.options.enableServer == true)
+            if (Game1.options.enableServer)
             {
                 if (!String.Equals(inviteCodeTXT, Game1.server.getInviteCode()))
                 {
@@ -623,7 +611,7 @@ namespace Always_On_Server
 
             }
             //write number of players online to .txt
-            if (Game1.options.enableServer == true)
+            if (Game1.options.enableServer)
             {
 
                 if (connectionsCount != Game1.server.connectionsCount)
@@ -656,25 +644,25 @@ namespace Always_On_Server
 
             //left click menu spammer and event skipper to get through random events happening
             //also moves player around, this seems to free host from random bugs sometimes
-            if (IsEnabled == true) // server toggle
+            if (IsEnabled) // server toggle
             {
 
                 if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is DialogueBox)
                 {
 
-                    Game1.activeClickableMenu.receiveLeftClick(10, 10, true);
+                    Game1.activeClickableMenu.receiveLeftClick(10, 10);
 
                 }
-                if (Game1.CurrentEvent != null && Game1.CurrentEvent.skippable == true)
+                if (Game1.CurrentEvent != null && Game1.CurrentEvent.skippable)
                 {
                     Game1.CurrentEvent.skipEvent();
                 }
-                /*if (playerMovedRight == false && Game1.player.canMove == true)
+                /*if (!playerMovedRight && Game1.player.canMove)
                 {
                     Game1.player.tryToMoveInDirection(1, true, 0, false);
                     playerMovedRight = true;
                 }
-                else if (playerMovedRight == true && Game1.player.canMove == true)
+                else if (playerMovedRight && Game1.player.canMove)
                 {
                     Game1.player.tryToMoveInDirection(3, true, 0, false);
                     playerMovedRight = false;
@@ -684,7 +672,7 @@ namespace Always_On_Server
 
 
             //disable friendship decay
-            if (IsEnabled == true) // server toggle
+            if (IsEnabled) // server toggle
             {
                 if (this.PreviousFriendships.Any())
                 {
@@ -708,9 +696,9 @@ namespace Always_On_Server
 
 
             //eggHunt event
-            if (eggHuntAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (eggHuntAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
-                if (eventCommandUsed == true)
+                if (eventCommandUsed)
                 {
                     eggHuntCountDown = this.Config.eggHuntCountDownConfig;
                     eventCommandUsed = false;
@@ -727,7 +715,7 @@ namespace Always_On_Server
 
                 if (eggHuntCountDown == this.Config.eggHuntCountDownConfig + 1)
                 {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
                 }
                 if (eggHuntCountDown >= this.Config.eggHuntCountDownConfig + 5)
                 {
@@ -749,9 +737,9 @@ namespace Always_On_Server
 
 
             //flowerDance event
-            if (flowerDanceAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (flowerDanceAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
-                if (eventCommandUsed == true)
+                if (eventCommandUsed)
                 {
                     flowerDanceCountDown = this.Config.flowerDanceCountDownConfig;
                     eventCommandUsed = false;
@@ -769,7 +757,7 @@ namespace Always_On_Server
 
                 if (flowerDanceCountDown == this.Config.flowerDanceCountDownConfig + 1)
                 {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
                 }
                 if (flowerDanceCountDown >= this.Config.flowerDanceCountDownConfig + 5)
                 {
@@ -790,13 +778,13 @@ namespace Always_On_Server
             }
 
             //luauSoup event
-            if (luauSoupAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (luauSoupAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
-                if (eventCommandUsed == true)
+                if (eventCommandUsed)
                 {
                     luauSoupCountDown = this.Config.luauSoupCountDownConfig;
-                    //add iridum starfruit to soup
-                    var item = new StardewValley.Object(268, 1, false, -1, 3);
+                    //add iridium starfruit to soup
+                    var item = new SObject(268, 1, false, -1, 3);
                     this.Helper.Reflection.GetMethod(new Event(), "addItemToLuauSoup").Invoke(item, Game1.player);
                     eventCommandUsed = false;
 
@@ -811,15 +799,15 @@ namespace Always_On_Server
                     Game1.chatBox.setText($"The Soup Tasting will begin in {chatSoup:0.#} minutes.");
                     Game1.chatBox.chatBox.RecieveCommandInput('\r');
 
-                    //add iridum starfruit to soup
-                    var item = new StardewValley.Object(268, 1, false, -1, 3);
+                    //add iridium starfruit to soup
+                    var item = new SObject(268, 1, false, -1, 3);
                     this.Helper.Reflection.GetMethod(new Event(), "addItemToLuauSoup").Invoke(item, Game1.player);
 
                 }
 
                 if (luauSoupCountDown == this.Config.luauSoupCountDownConfig + 1)
                 {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
                 }
                 if (luauSoupCountDown >= this.Config.luauSoupCountDownConfig + 5)
                 {
@@ -840,9 +828,9 @@ namespace Always_On_Server
             }
 
             //Dance of the Moonlight Jellies event
-            if (jellyDanceAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (jellyDanceAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
-                if (eventCommandUsed == true)
+                if (eventCommandUsed)
                 {
                     jellyDanceCountDown = this.Config.jellyDanceCountDownConfig;
                     eventCommandUsed = false;
@@ -860,7 +848,7 @@ namespace Always_On_Server
 
                 if (jellyDanceCountDown == this.Config.jellyDanceCountDownConfig + 1)
                 {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
                 }
                 if (jellyDanceCountDown >= this.Config.jellyDanceCountDownConfig + 5)
                 {
@@ -880,9 +868,9 @@ namespace Always_On_Server
             }
 
             //Grange Display event
-            if (grangeDisplayAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (grangeDisplayAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
-                if (eventCommandUsed == true)
+                if (eventCommandUsed)
                 {
                     grangeDisplayCountDown = this.Config.grangeDisplayCountDownConfig;
                     eventCommandUsed = false;
@@ -915,12 +903,12 @@ namespace Always_On_Server
 
                 if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 1)
                 {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
                 }
                 if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 5)
                 {
                     Game1.player.team.SetLocalReady("festivalEnd", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalEnd", true, (ConfirmationDialog.behavior)(who =>
+                    Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
                     {
                         getBedCoordinates();
                         Game1.exitActiveMenu();
@@ -928,13 +916,13 @@ namespace Always_On_Server
                         Game1.timeOfDay = 2200;
                         Game1.shouldTimePass();
 
-                    }), (ConfirmationDialog.behavior)null);
+                    });
 
                 }
             }
 
             //golden pumpkin maze event
-            if (goldenPumpkinAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (goldenPumpkinAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
                 goldenPumpkinCountDown += 1;
                 festivalTicksForReset += 1;
@@ -956,7 +944,7 @@ namespace Always_On_Server
                 if (goldenPumpkinCountDown == 10)
                 {
                     Game1.player.team.SetLocalReady("festivalEnd", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalEnd", true, (ConfirmationDialog.behavior)(who =>
+                    Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
                     {
                         getBedCoordinates();
                         Game1.exitActiveMenu();
@@ -964,15 +952,15 @@ namespace Always_On_Server
                         Game1.timeOfDay = 2400;
                         Game1.shouldTimePass();
 
-                    }), (ConfirmationDialog.behavior)null);
+                    });
 
                 }
             }
 
             //ice fishing event
-            if (iceFishingAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (iceFishingAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
-                if (eventCommandUsed == true)
+                if (eventCommandUsed)
                 {
                     iceFishingCountDown = this.Config.iceFishingCountDownConfig;
                     eventCommandUsed = false;
@@ -989,7 +977,7 @@ namespace Always_On_Server
 
                 if (iceFishingCountDown == this.Config.iceFishingCountDownConfig + 1)
                 {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion", true).Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
                 }
                 if (iceFishingCountDown >= this.Config.iceFishingCountDownConfig + 5)
                 {
@@ -1009,7 +997,7 @@ namespace Always_On_Server
             }
 
             //Feast of the Winter event
-            if (winterFeastAvailable == true && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            if (winterFeastAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
             {
                 winterFeastCountDown += 1;
                 festivalTicksForReset += 1;
@@ -1031,7 +1019,7 @@ namespace Always_On_Server
                 if (winterFeastCountDown == 10)
                 {
                     Game1.player.team.SetLocalReady("festivalEnd", true);
-                    Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalEnd", true, (ConfirmationDialog.behavior)(who =>
+                    Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
                     {
                         getBedCoordinates();
                         Game1.exitActiveMenu();
@@ -1039,7 +1027,7 @@ namespace Always_On_Server
                         Game1.timeOfDay = 2200;
                         Game1.shouldTimePass();
 
-                    }), (ConfirmationDialog.behavior)null);
+                    });
 
 
                 }
@@ -1067,12 +1055,12 @@ namespace Always_On_Server
             {
                 this.numPlayers = Game1.otherFarmers.Count;
 
-                if (numPlayers >= 1 || debug == true)
+                if (numPlayers >= 1 || debug)
                 {
-                    if (clientPaused == true)
-                    { Game1.netWorldState.Value.IsPaused = true; }
-                    if (clientPaused == false)
-                    { Game1.paused = false; }
+                    if (clientPaused)
+                        Game1.netWorldState.Value.IsPaused = true;
+                    else
+                        Game1.paused = false;
 
                 }
                 else if (numPlayers <= 0 && Game1.timeOfDay >= 610 && Game1.timeOfDay <= 2500 && currentDate != eggFestival && currentDate != flowerDance && currentDate != luau && currentDate != danceOfJellies && currentDate != stardewValleyFair && currentDate != spiritsEve && currentDate != festivalOfIce && currentDate != feastOfWinterStar)
@@ -1090,7 +1078,7 @@ namespace Always_On_Server
         //handles various events that the host normally has to click through
         private void FullAutoHandler(object sender, EventArgs e)
         {
-            if (IsEnabled == true)
+            if (IsEnabled)
             {
 
                 if (currentDate != grampasGhost && currentDate != eggFestival && currentDate != flowerDance && currentDate != luau && currentDate != danceOfJellies && currentDate != stardewValleyFair && currentDate != spiritsEve && currentDate != festivalOfIce && currentDate != feastOfWinterStar)
@@ -1107,7 +1095,7 @@ namespace Always_On_Server
                     {
 
                         //rustkey-sewers unlock
-                        if (Game1.player.hasRustyKey == false)
+                        if (!Game1.player.hasRustyKey)
                         {
                             int items1 = this.Helper.Reflection.GetMethod(new LibraryMuseum(), "numberOfMuseumItemsOfType").Invoke<int>("Arch");
                             int items2 = this.Helper.Reflection.GetMethod(new LibraryMuseum(), "numberOfMuseumItemsOfType").Invoke<int>("Minerals");
@@ -1122,7 +1110,7 @@ namespace Always_On_Server
 
 
                         //community center complete
-                        if (this.Config.communitycenterrun == true)
+                        if (this.Config.communitycenterrun)
                         {
                             if (!Game1.player.eventsSeen.Contains(191393) && Game1.player.mailReceived.Contains("ccCraftsRoom") && Game1.player.mailReceived.Contains("ccVault") && Game1.player.mailReceived.Contains("ccFishTank") && Game1.player.mailReceived.Contains("ccBoilerRoom") && Game1.player.mailReceived.Contains("ccPantry") && Game1.player.mailReceived.Contains("ccBulletin"))
                             {
@@ -1134,7 +1122,7 @@ namespace Always_On_Server
                             }
                         }
                         //Joja run 
-                        if (this.Config.communitycenterrun == false)
+                        if (!this.Config.communitycenterrun)
                         {
                             if (Game1.player.money >= 10000 && !Game1.player.mailReceived.Contains("JojaMember"))
                             {
@@ -1200,8 +1188,6 @@ namespace Always_On_Server
                                 Game1.chatBox.chatBox.RecieveCommandInput('\r');
                                 Game1.player.eventsSeen.Add(502261);
                             }
-
-
                         }
 
                     }
@@ -1224,10 +1210,10 @@ namespace Always_On_Server
         private void InstantAutoHandler(object sender, EventArgs e)
         {
 
-            if (IsEnabled == true)
+            if (IsEnabled)
             {
                 //lockPlayerChests
-                if (this.Config.lockPlayerChests == true)
+                if (this.Config.lockPlayerChests)
                 {
                     foreach (Farmer farmer in Game1.getOnlineFarmers())
                     {
@@ -1238,7 +1224,7 @@ namespace Always_On_Server
                             playerinventory.RequestLock();
 
                             //locks all chests
-                            foreach (StardewValley.Object x in cabin.objects.Values)
+                            foreach (SObject x in cabin.objects.Values)
                             {
                                 if (x is Chest chest)
                                 {
@@ -1264,9 +1250,9 @@ namespace Always_On_Server
                 //petchoice
                 if (!Game1.player.hasPet())
                 {
-                    this.Helper.Reflection.GetMethod(new Event(), "namePet", true).Invoke(this.Config.petname.Substring(0));
+                    this.Helper.Reflection.GetMethod(new Event(), "namePet").Invoke(this.Config.petname.Substring(0));
                 }
-                if (Game1.player.hasPet() && Game1.getCharacterFromName(Game1.player.getPetName(), false) is Pet pet)
+                if (Game1.player.hasPet() && Game1.getCharacterFromName(Game1.player.getPetName()) is Pet pet)
                 {
                     pet.Name = this.Config.petname.Substring(0);
                     pet.displayName = this.Config.petname.Substring(0);
@@ -1277,7 +1263,7 @@ namespace Always_On_Server
                     Game1.player.eventsSeen.Add(65);
 
 
-                    if (this.Config.farmcavechoicemushrooms == true)
+                    if (this.Config.farmcavechoicemushrooms)
                     {
                         Game1.MasterPlayer.caveChoice.Value = 2;
                         (Game1.getLocationFromName("FarmCave") as FarmCave).setUpMushroomHouse();
@@ -1323,7 +1309,7 @@ namespace Always_On_Server
             feastOfWinterStar = new SDate(25, "winter");
             grampasGhost = new SDate(1, "spring", 3);
 
-            if (IsEnabled == false) // server toggle
+            if (!IsEnabled) // server toggle
                 return;
 
 
@@ -1336,7 +1322,7 @@ namespace Always_On_Server
 
 
 
-                if (currentDate == eggFestival && (numPlayers >= 1 || debug == true))   //set back to 1 after testing~!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                if (currentDate == eggFestival && (numPlayers >= 1 || debug))   //set back to 1 after testing~!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 {
                     FestivalsToggle();
 
@@ -1487,12 +1473,12 @@ namespace Always_On_Server
 
                 //teleports to egg festival
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Town", 1, 20, 1);
 
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 eggHuntAvailable = true;
 
@@ -1515,11 +1501,11 @@ namespace Always_On_Server
             {
 
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Forest", 1, 20, 1);
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 flowerDanceAvailable = true;
 
@@ -1542,12 +1528,12 @@ namespace Always_On_Server
             {
 
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Beach", 1, 20, 1);
 
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 luauSoupAvailable = true;
 
@@ -1572,12 +1558,12 @@ namespace Always_On_Server
 
 
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Beach", 1, 20, 1);
 
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 jellyDanceAvailable = true;
 
@@ -1601,12 +1587,12 @@ namespace Always_On_Server
 
 
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Town", 1, 20, 1);
 
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 grangeDisplayAvailable = true;
 
@@ -1634,12 +1620,12 @@ namespace Always_On_Server
 
 
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Town", 1, 20, 1);
 
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 goldenPumpkinAvailable = true;
 
@@ -1663,12 +1649,12 @@ namespace Always_On_Server
 
 
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Forest", 1, 20, 1);
 
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 iceFishingAvailable = true;
 
@@ -1691,12 +1677,12 @@ namespace Always_On_Server
 
 
                 Game1.player.team.SetLocalReady("festivalStart", true);
-                Game1.activeClickableMenu = (IClickableMenu)new ReadyCheckDialog("festivalStart", true, (ConfirmationDialog.behavior)(who =>
+                Game1.activeClickableMenu = new ReadyCheckDialog("festivalStart", true, who =>
                 {
                     Game1.exitActiveMenu();
                     Game1.warpFarmer("Town", 1, 20, 1);
 
-                }), (ConfirmationDialog.behavior)null);
+                });
 
                 winterFeastAvailable = true;
 
@@ -1755,7 +1741,7 @@ namespace Always_On_Server
         // shipping menu"OK" click through code
         private void Shipping_Menu(object sender, EventArgs e)
         {
-            if (IsEnabled == false) // server toggle
+            if (!IsEnabled) // server toggle
                 return;
 
             this.Monitor.Log("This is the Shipping Menu");
@@ -1794,7 +1780,7 @@ namespace Always_On_Server
                 }
 
             }
-            if (shippingMenuActive == true && this.Config.endofdayTimeOut != 0)
+            if (shippingMenuActive && this.Config.endofdayTimeOut != 0)
             {
 
                 shippingMenuTimeoutTicks += 1;
