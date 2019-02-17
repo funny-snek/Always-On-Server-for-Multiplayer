@@ -370,18 +370,13 @@ namespace Always_On_Server
                     {
                         Game1.netWorldState.Value.IsPaused = true;
                         clientPaused = true;
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Game Paused");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-
+                        this.SendChatMessage("Game Paused");
                     }
                     if (lastFragment != null && lastFragment == "!unpause")
                     {
                         Game1.netWorldState.Value.IsPaused = false;
                         clientPaused = false;
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Game UnPaused");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        this.SendChatMessage("Game UnPaused");
                     }
                 }
             }
@@ -394,9 +389,9 @@ namespace Always_On_Server
 
                 if (Game1.options.enableServer)
                 {
-                    if (!String.Equals(inviteCode, Game1.server.getInviteCode()))
+                    if (inviteCode != Game1.server.getInviteCode())
                     {
-                        DesktopClipboard.SetText("Invite Code: " + Game1.server.getInviteCode());
+                        DesktopClipboard.SetText($"Invite Code: {Game1.server.getInviteCode()}");
                         inviteCode = Game1.server.getInviteCode();
                     }
                 }
@@ -405,7 +400,7 @@ namespace Always_On_Server
             //write code to a InviteCode.txt in the Always On Server mod folder
             if (Game1.options.enableServer)
             {
-                if (!String.Equals(inviteCodeTXT, Game1.server.getInviteCode()))
+                if (inviteCodeTXT != Game1.server.getInviteCode())
                 {
 
 
@@ -532,9 +527,7 @@ namespace Always_On_Server
                 float chatEgg = this.Config.eggHuntCountDownConfig / 60f;
                 if (eggHuntCountDown == 1)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"The Egg Hunt will begin in {chatEgg:0.#} minutes.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage($"The Egg Hunt will begin in {chatEgg:0.#} minutes.");
                 }
 
                 if (eggHuntCountDown == this.Config.eggHuntCountDownConfig + 1)
@@ -574,9 +567,7 @@ namespace Always_On_Server
                 float chatFlower = this.Config.flowerDanceCountDownConfig / 60f;
                 if (flowerDanceCountDown == 1)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"The Flower Dance will begin in {chatFlower:0.#} minutes.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage($"The Flower Dance will begin in {chatFlower:0.#} minutes.");
                 }
 
                 if (flowerDanceCountDown == this.Config.flowerDanceCountDownConfig + 1)
@@ -619,9 +610,7 @@ namespace Always_On_Server
                 float chatSoup = this.Config.luauSoupCountDownConfig / 60f;
                 if (luauSoupCountDown == 1)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"The Soup Tasting will begin in {chatSoup:0.#} minutes.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage($"The Soup Tasting will begin in {chatSoup:0.#} minutes.");
 
                     //add iridium starfruit to soup
                     var item = new SObject(268, 1, false, -1, 3);
@@ -665,9 +654,7 @@ namespace Always_On_Server
                 float chatJelly = this.Config.jellyDanceCountDownConfig / 60f;
                 if (jellyDanceCountDown == 1)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"The Dance of the Moonlight Jellies will begin in {chatJelly:0.#} minutes.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage($"The Dance of the Moonlight Jellies will begin in {chatJelly:0.#} minutes.");
                 }
 
                 if (jellyDanceCountDown == this.Config.jellyDanceCountDownConfig + 1)
@@ -705,12 +692,8 @@ namespace Always_On_Server
                 //festival timeout code
                 if (festivalTicksForReset == this.Config.fairTimeOut - 120)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText("2 minutes to the exit or");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText("everyone will be kicked.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage("2 minutes to the exit or");
+                    this.SendChatMessage("everyone will be kicked.");
                 }
                 if (festivalTicksForReset >= this.Config.fairTimeOut)
                 {
@@ -720,9 +703,7 @@ namespace Always_On_Server
                 float chatGrange = this.Config.grangeDisplayCountDownConfig / 60f;
                 if (grangeDisplayCountDown == 1)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"The Grange Judging will begin in {chatGrange:0.#} minutes.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage($"The Grange Judging will begin in {chatGrange:0.#} minutes.");
                 }
 
                 if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 1)
@@ -753,12 +734,8 @@ namespace Always_On_Server
                 //festival timeout code
                 if (festivalTicksForReset == this.Config.spiritsEveTimeOut - 120)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText("2 minutes to the exit or");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText("everyone will be kicked.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage("2 minutes to the exit or");
+                    this.SendChatMessage("everyone will be kicked.");
                 }
                 if (festivalTicksForReset >= this.Config.spiritsEveTimeOut)
                 {
@@ -794,9 +771,7 @@ namespace Always_On_Server
                 float chatIceFish = this.Config.iceFishingCountDownConfig / 60f;
                 if (iceFishingCountDown == 1)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText($"The Ice Fishing Contest will begin in {chatIceFish:0.#} minutes.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage($"The Ice Fishing Contest will begin in {chatIceFish:0.#} minutes.");
                 }
 
                 if (iceFishingCountDown == this.Config.iceFishingCountDownConfig + 1)
@@ -828,12 +803,8 @@ namespace Always_On_Server
                 //festival timeout code
                 if (festivalTicksForReset == this.Config.winterStarTimeOut - 120)
                 {
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText("2 minutes to the exit or");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    Game1.chatBox.activate();
-                    Game1.chatBox.setText("everyone will be kicked.");
-                    Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                    this.SendChatMessage("2 minutes to the exit or");
+                    this.SendChatMessage("everyone will be kicked.");
                 }
                 if (festivalTicksForReset >= this.Config.winterStarTimeOut)
                 {
@@ -914,25 +885,17 @@ namespace Always_On_Server
                             if (currentTime >= this.Config.timeOfDayToSleep)
                             {
                                 GoToBed();
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Tring to go to bed.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Trying to go to bed.");
                             }
                             else
                             {
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("It's too early.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText($"Try after {this.Config.timeOfDayToSleep}.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("It's too early.");
+                                this.SendChatMessage($"Try after {this.Config.timeOfDayToSleep}.");
                             }
                         }
                         if (lastFragment == "!festival")
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Tring to go to Festival.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Trying to go to Festival.");
 
                             if (currentDate == eggFestival)
                             {
@@ -969,9 +932,7 @@ namespace Always_On_Server
                             }
                             else
                             {
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Festival Not Ready.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Festival Not Ready.");
                             }
                         }
                         if (lastFragment == "!event")
@@ -1021,18 +982,14 @@ namespace Always_On_Server
                             }
                             else
                             {
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("I'm not at a Festival.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("I'm not at a Festival.");
                             }
                         }
                         if (lastFragment == "!leave")
                         {
                             if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                             {
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Trying to leave Festival");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Trying to leave Festival");
 
                                 Game1.player.team.SetLocalReady("festivalEnd", true);
                                 Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
@@ -1047,25 +1004,19 @@ namespace Always_On_Server
                             }
                             else
                             {
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("I'm not at a Festival.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("I'm not at a Festival.");
                             }
                         }
                         if (lastFragment == "!unstick")
                         {
                             if (Game1.player.currentLocation is FarmHouse)
                             {
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Warping to Farm.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Warping to Farm.");
                                 Game1.warpFarmer("Farm", 64, 15, false);
                             }
                             else
                             {
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Warping inside house.");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Warping inside house.");
                                 getBedCoordinates();
                                 Game1.warpFarmer("Farmhouse", bedX, bedY, false);
                             }
@@ -1195,12 +1146,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Egg Festival Today!");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Egg Festival Today!");
+                            this.SendChatMessage("I will not be in bed until after 2:00 P.M.");
 
                         }
                         EggFestival();
@@ -1214,12 +1161,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Flower Dance Today.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Flower Dance Today.");
+                            this.SendChatMessage("I will not be in bed until after 2:00 P.M.");
 
                         }
                         FlowerDance();
@@ -1231,12 +1174,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Luau Today!");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Luau Today!");
+                            this.SendChatMessage("I will not be in bed until after 2:00 P.M.");
                         }
                         Luau();
                     }
@@ -1247,12 +1186,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Dance of the Moonlight Jellies Tonight!");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 12:00 A.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Dance of the Moonlight Jellies Tonight!");
+                            this.SendChatMessage("I will not be in bed until after 12:00 A.M.");
                         }
                         DanceOfTheMoonlightJellies();
                     }
@@ -1263,12 +1198,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Stardew Valley Fair Today!");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 3:00 P.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Stardew Valley Fair Today!");
+                            this.SendChatMessage("I will not be in bed until after 3:00 P.M.");
                         }
                         StardewValleyFair();
                     }
@@ -1279,12 +1210,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Spirit's Eve Tonight!");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 12:00 A.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Spirit's Eve Tonight!");
+                            this.SendChatMessage("I will not be in bed until after 12:00 A.M.");
                         }
                         SpiritsEve();
                     }
@@ -1295,12 +1222,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Festival of Ice Today!");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Festival of Ice Today!");
+                            this.SendChatMessage("I will not be in bed until after 2:00 P.M.");
                         }
                         FestivalOfIce();
                     }
@@ -1311,12 +1234,8 @@ namespace Always_On_Server
 
                         if (currentTime >= 600 && currentTime <= 630)
                         {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Feast of the Winter Star Today!");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            this.SendChatMessage("Feast of the Winter Star Today!");
+                            this.SendChatMessage("I will not be in bed until after 2:00 P.M.");
                         }
                         FeastOfWinterStar();
                     }
@@ -1381,9 +1300,7 @@ namespace Always_On_Server
                             {
                                 Game1.player.money -= 5000;
                                 Game1.player.mailReceived.Add("JojaMember");
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Buying Joja Membership");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Buying Joja Membership");
 
                             }
 
@@ -1392,9 +1309,7 @@ namespace Always_On_Server
                                 Game1.player.money -= 15000;
                                 Game1.player.mailReceived.Add("ccBoilerRoom");
                                 Game1.player.mailReceived.Add("jojaBoilerRoom");
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Buying Joja Minecarts");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Buying Joja Minecarts");
 
                             }
 
@@ -1403,9 +1318,7 @@ namespace Always_On_Server
                                 Game1.player.money -= 20000;
                                 Game1.player.mailReceived.Add("ccFishTank");
                                 Game1.player.mailReceived.Add("jojaFishTank");
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Buying Joja Panning");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Buying Joja Panning");
 
                             }
 
@@ -1414,9 +1327,7 @@ namespace Always_On_Server
                                 Game1.player.money -= 25000;
                                 Game1.player.mailReceived.Add("ccCraftsRoom");
                                 Game1.player.mailReceived.Add("jojaCraftsRoom");
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Buying Joja Bridge");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Buying Joja Bridge");
 
                             }
 
@@ -1425,9 +1336,7 @@ namespace Always_On_Server
                                 Game1.player.money -= 35000;
                                 Game1.player.mailReceived.Add("ccPantry");
                                 Game1.player.mailReceived.Add("jojaPantry");
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Buying Joja Greenhouse");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Buying Joja Greenhouse");
 
                             }
 
@@ -1436,9 +1345,7 @@ namespace Always_On_Server
                                 Game1.player.money -= 40000;
                                 Game1.player.mailReceived.Add("ccVault");
                                 Game1.player.mailReceived.Add("jojaVault");
-                                Game1.chatBox.activate();
-                                Game1.chatBox.setText("Buying Joja Bus");
-                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                this.SendChatMessage("Buying Joja Bus");
                                 Game1.player.eventsSeen.Add(502261);
                             }
                         }
@@ -1799,6 +1706,15 @@ namespace Always_On_Server
             {
                 Game1.paused = false;
             }
+        }
+
+        /// <summary>Send a chat message.</summary>
+        /// <param name="message">The message text.</param>
+        private void SendChatMessage(string message)
+        {
+            Game1.chatBox.activate();
+            Game1.chatBox.setText(message);
+            Game1.chatBox.chatBox.RecieveCommandInput('\r');
         }
     }
 }
