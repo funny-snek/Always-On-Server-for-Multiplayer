@@ -7,6 +7,5 @@
         public int ForagingLevel { get; set; }
         public int FishingLevel { get; set; }
         public int CombatLevel { get; set; }
-        
     }
 }

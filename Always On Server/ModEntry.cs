@@ -108,26 +108,27 @@ namespace Always_On_Server
             helper.ConsoleCommands.Add("server", "Toggles headless server on/off", this.ServerToggle);
             helper.ConsoleCommands.Add("debug_server", "Turns debug mode on/off, lets server run when no players are connected", this.DebugToggle);
 
-            SaveEvents.AfterLoad += this.AfterLoad;
-            SaveEvents.BeforeSave += this.Shipping_Menu; // Shipping Menu handler
-            GameEvents.OneSecondTick += this.GameEvents_OneSecondTick; //game tick event handler
-            TimeEvents.TimeOfDayChanged += this.TimeEvents_TimeOfDayChanged; // Time of day change handler
-            TimeEvents.TimeOfDayChanged += this.FullAutoHandler; //handles various events the host normally has to click through
-            GameEvents.UpdateTick += this.InstantAutoHandler; //handles various events that should occur as soon as they are available
-            GameEvents.OneSecondTick += ClientCommands; //handles commands that make the host sleep, go to festivals, start festival events
-            ControlEvents.KeyPressed += this.ControlEvents_KeyPressed;
-            GraphicsEvents.OnPostRenderEvent += this.GraphicsEvents_OnPostRenderEvent;
-            MultiplayerEvents.BeforeMainSync += Sync; //used bc only thing that gets throug save window
-
+            helper.Events.GameLoop.SaveLoaded += this.OnSaveLoaded;
+            helper.Events.GameLoop.Saving += this.OnSaving; // Shipping Menu handler
+            helper.Events.GameLoop.OneSecondUpdateTicked += this.OnOneSecondUpdateTicked; //game tick event handler
+            helper.Events.GameLoop.TimeChanged += this.OnTimeChanged; // Time of day change handler
+            helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked; //handles various events that should occur as soon as they are available
+            helper.Events.Input.ButtonPressed += this.OnButtonPressed;
+            helper.Events.Display.Rendered += this.OnRendered;
+            helper.Events.Specialised.UnvalidatedUpdateTicked += OnUnvalidatedUpdateTick; //used bc only thing that gets throug save window
         }
 
 
 
 
 
-        // turns on server after the game loads
-        private void AfterLoad(object sender, EventArgs e)
+
+        /// <summary>Raised after the player loads a save slot and the world is initialised.</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // turns on server after the game loads
             if (Game1.IsServer)
             {
                 //store levels, set in game levels to max
@@ -184,9 +185,12 @@ namespace Always_On_Server
             }
         }
 
-        //draw a textbox in the top left corner saying Server On
-        private void GraphicsEvents_OnPostRenderEvent(object sender, EventArgs e)
+        /// <summary>Raised after the game draws to the sprite patch in a draw tick, just before the final sprite batch is rendered to the screen.</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        private void OnRendered(object sender, RenderedEventArgs e)
         {
+            //draw a textbox in the top left corner saying Server On
             if (Game1.options.enableServer && IsEnabled)
             {
                 int connectionsCount = Game1.server.connectionsCount;
@@ -262,13 +266,15 @@ namespace Always_On_Server
             }
         }
 
-        //toggles server on/off with configurable hotkey
-        private void ControlEvents_KeyPressed(object sender, EventArgsKeyPressed e)
+        /// <summary>Raised after the player presses a button on the keyboard, controller, or mouse.</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
-
+            //toggles server on/off with configurable hotkey
             if (Context.IsWorldReady)
             {
-                if (e.KeyPressed.ToString() == this.Config.serverHotKey)
+                if (e.Button == this.Config.serverHotKey)
                 {
                     if (!IsEnabled)
                     {
@@ -335,194 +341,12 @@ namespace Always_On_Server
             if (!this.Config.festivalsOn)
                 return;
         }
-        //handles client commands for sleep, go to festival, start festival event.
-        private void ClientCommands(object sender, EventArgs e)
-        {
-
-            if (!Context.IsWorldReady)
-                return;
-            if (!IsEnabled)
-                return;
 
 
-            List<ChatMessage> messages = this.Helper.Reflection.GetField<List<ChatMessage>>(Game1.chatBox, "messages").GetValue();
-            if (messages.Count > 0)
-            {
-                var messagetoconvert = messages[messages.Count - 1].message;
-                string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert);
-                string lastFragment = actualmessage.Split(' ')[1];
-
-                if (lastFragment != null)
-                {
-                    if (lastFragment == "!sleep")
-                    {
-                        if (currentTime >= this.Config.timeOfDayToSleep)
-                        {
-                            GoToBed();
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Tring to go to bed.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        }
-                        else
-                        {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("It's too early.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText($"Try after {this.Config.timeOfDayToSleep}.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        }
-                    }
-                    if (lastFragment == "!festival")
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Tring to go to Festival.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-
-                        if (currentDate == eggFestival)
-                        {
-                            EggFestival();
-
-                        }
-                        else if (currentDate == flowerDance)
-                        {
-                            FlowerDance();
-                        }
-                        else if (currentDate == luau)
-                        {
-                            Luau();
-                        }
-                        else if (currentDate == danceOfJellies)
-                        {
-                            DanceOfTheMoonlightJellies();
-                        }
-                        else if (currentDate == stardewValleyFair)
-                        {
-                            StardewValleyFair();
-                        }
-                        else if (currentDate == spiritsEve)
-                        {
-                            SpiritsEve();
-                        }
-                        else if (currentDate == festivalOfIce)
-                        {
-                            FestivalOfIce();
-                        }
-                        else if (currentDate == feastOfWinterStar)
-                        {
-                            FeastOfWinterStar();
-                        }
-                        else
-                        {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Festival Not Ready.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        }
-                    }
-                    if (lastFragment == "!event")
-                    {
-                        if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-                        {
-                            if (currentDate == eggFestival)
-                            {
-                                eventCommandUsed = true;
-                                eggHuntAvailable = true;
-                            }
-                            else if (currentDate == flowerDance)
-                            {
-                                eventCommandUsed = true;
-                                flowerDanceAvailable = true;
-                            }
-                            else if (currentDate == luau)
-                            {
-                                eventCommandUsed = true;
-                                luauSoupAvailable = true;
-                            }
-                            else if (currentDate == danceOfJellies)
-                            {
-                                eventCommandUsed = true;
-                                jellyDanceAvailable = true;
-                            }
-                            else if (currentDate == stardewValleyFair)
-                            {
-                                eventCommandUsed = true;
-                                grangeDisplayAvailable = true;
-                            }
-                            else if (currentDate == spiritsEve)
-                            {
-                                eventCommandUsed = true;
-                                goldenPumpkinAvailable = true;
-                            }
-                            else if (currentDate == festivalOfIce)
-                            {
-                                eventCommandUsed = true;
-                                iceFishingAvailable = true;
-                            }
-                            else if (currentDate == feastOfWinterStar)
-                            {
-                                eventCommandUsed = true;
-                                winterFeastAvailable = true;
-                            }
-                        }
-                        else
-                        {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I'm not at a Festival.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        }
-                    }
-                    if (lastFragment == "!leave")
-                    {
-                        if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-                        {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Trying to leave Festival");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-
-                            Game1.player.team.SetLocalReady("festivalEnd", true);
-                            Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
-                            {
-                                getBedCoordinates();
-                                Game1.exitActiveMenu();
-                                Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-                                Game1.timeOfDay = 2200;
-                                Game1.shouldTimePass();
-
-                            });
-                        }
-                        else
-                        {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("I'm not at a Festival.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        }
-                    }
-                    if (lastFragment == "!unstick")
-                    {
-                        if (Game1.player.currentLocation is FarmHouse)
-                        {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Warping to Farm.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            Game1.warpFarmer("Farm", 64, 15, false);
-                        }
-                        else
-                        {
-                            Game1.chatBox.activate();
-                            Game1.chatBox.setText("Warping inside house.");
-                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                            getBedCoordinates();
-                            Game1.warpFarmer("Farmhouse", bedX, bedY, false);
-                        }
-                    }
-
-                }
-            }
-        }
-
-
-
-        private void GameEvents_OneSecondTick(object sender, EventArgs e)
+        /// <summary>Raised once per second after the game state is updated.</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        private void OnOneSecondUpdateTicked(object sender, OneSecondUpdateTickedEventArgs e)
         {
             if (!IsEnabled) // server toggle
             {
@@ -1071,13 +895,442 @@ namespace Always_On_Server
 
                 gameTicks = 0;
             }
+
+
+            //handles client commands for sleep, go to festival, start festival event.
+            if (Context.IsWorldReady && IsEnabled)
+            {
+                List<ChatMessage> messages = this.Helper.Reflection.GetField<List<ChatMessage>>(Game1.chatBox, "messages").GetValue();
+                if (messages.Count > 0)
+                {
+                    var messagetoconvert = messages[messages.Count - 1].message;
+                    string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert);
+                    string lastFragment = actualmessage.Split(' ')[1];
+
+                    if (lastFragment != null)
+                    {
+                        if (lastFragment == "!sleep")
+                        {
+                            if (currentTime >= this.Config.timeOfDayToSleep)
+                            {
+                                GoToBed();
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("Tring to go to bed.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            }
+                            else
+                            {
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("It's too early.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText($"Try after {this.Config.timeOfDayToSleep}.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            }
+                        }
+                        if (lastFragment == "!festival")
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Tring to go to Festival.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+
+                            if (currentDate == eggFestival)
+                            {
+                                EggFestival();
+
+                            }
+                            else if (currentDate == flowerDance)
+                            {
+                                FlowerDance();
+                            }
+                            else if (currentDate == luau)
+                            {
+                                Luau();
+                            }
+                            else if (currentDate == danceOfJellies)
+                            {
+                                DanceOfTheMoonlightJellies();
+                            }
+                            else if (currentDate == stardewValleyFair)
+                            {
+                                StardewValleyFair();
+                            }
+                            else if (currentDate == spiritsEve)
+                            {
+                                SpiritsEve();
+                            }
+                            else if (currentDate == festivalOfIce)
+                            {
+                                FestivalOfIce();
+                            }
+                            else if (currentDate == feastOfWinterStar)
+                            {
+                                FeastOfWinterStar();
+                            }
+                            else
+                            {
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("Festival Not Ready.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            }
+                        }
+                        if (lastFragment == "!event")
+                        {
+                            if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                            {
+                                if (currentDate == eggFestival)
+                                {
+                                    eventCommandUsed = true;
+                                    eggHuntAvailable = true;
+                                }
+                                else if (currentDate == flowerDance)
+                                {
+                                    eventCommandUsed = true;
+                                    flowerDanceAvailable = true;
+                                }
+                                else if (currentDate == luau)
+                                {
+                                    eventCommandUsed = true;
+                                    luauSoupAvailable = true;
+                                }
+                                else if (currentDate == danceOfJellies)
+                                {
+                                    eventCommandUsed = true;
+                                    jellyDanceAvailable = true;
+                                }
+                                else if (currentDate == stardewValleyFair)
+                                {
+                                    eventCommandUsed = true;
+                                    grangeDisplayAvailable = true;
+                                }
+                                else if (currentDate == spiritsEve)
+                                {
+                                    eventCommandUsed = true;
+                                    goldenPumpkinAvailable = true;
+                                }
+                                else if (currentDate == festivalOfIce)
+                                {
+                                    eventCommandUsed = true;
+                                    iceFishingAvailable = true;
+                                }
+                                else if (currentDate == feastOfWinterStar)
+                                {
+                                    eventCommandUsed = true;
+                                    winterFeastAvailable = true;
+                                }
+                            }
+                            else
+                            {
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("I'm not at a Festival.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            }
+                        }
+                        if (lastFragment == "!leave")
+                        {
+                            if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                            {
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("Trying to leave Festival");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+
+                                Game1.player.team.SetLocalReady("festivalEnd", true);
+                                Game1.activeClickableMenu = new ReadyCheckDialog("festivalEnd", true, who =>
+                                {
+                                    getBedCoordinates();
+                                    Game1.exitActiveMenu();
+                                    Game1.warpFarmer("Farmhouse", bedX, bedY, false);
+                                    Game1.timeOfDay = 2200;
+                                    Game1.shouldTimePass();
+
+                                });
+                            }
+                            else
+                            {
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("I'm not at a Festival.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            }
+                        }
+                        if (lastFragment == "!unstick")
+                        {
+                            if (Game1.player.currentLocation is FarmHouse)
+                            {
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("Warping to Farm.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                Game1.warpFarmer("Farm", 64, 15, false);
+                            }
+                            else
+                            {
+                                Game1.chatBox.activate();
+                                Game1.chatBox.setText("Warping inside house.");
+                                Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                                getBedCoordinates();
+                                Game1.warpFarmer("Farmhouse", bedX, bedY, false);
+                            }
+                        }
+
+                    }
+                }
+            }
         }
 
 
-
-        //handles various events that the host normally has to click through
-        private void FullAutoHandler(object sender, EventArgs e)
+        /// <summary>Raised after the game state is updated (≈60 times per second).</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
+            if (IsEnabled)
+            {
+                //lockPlayerChests
+                if (this.Config.lockPlayerChests)
+                {
+                    foreach (Farmer farmer in Game1.getOnlineFarmers())
+                    {
+                        if (farmer.currentLocation is Cabin cabin && farmer != cabin.owner)
+                        {
+                            //locks player inventories
+                            NetMutex playerinventory = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
+                            playerinventory.RequestLock();
+
+                            //locks all chests
+                            foreach (SObject x in cabin.objects.Values)
+                            {
+                                if (x is Chest chest)
+                                {
+                                    //removed, the game stores color id's strangely, other colored chests randomly unlocking
+                                    /*if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
+                                    {
+                                        return;
+                                    }*/
+                                    //else
+                                    {
+                                        chest.mutex.RequestLock();
+                                    }
+                                }
+                            }
+                            //locks fridge
+                            cabin.fridge.Value.mutex.RequestLock();
+                        }
+                    }
+
+                }
+
+
+                //petchoice
+                if (!Game1.player.hasPet())
+                {
+                    this.Helper.Reflection.GetMethod(new Event(), "namePet").Invoke(this.Config.petname.Substring(0));
+                }
+                if (Game1.player.hasPet() && Game1.getCharacterFromName(Game1.player.getPetName()) is Pet pet)
+                {
+                    pet.Name = this.Config.petname.Substring(0);
+                    pet.displayName = this.Config.petname.Substring(0);
+                }
+                //cave choice unlock 
+                if (!Game1.player.eventsSeen.Contains(65))
+                {
+                    Game1.player.eventsSeen.Add(65);
+
+
+                    if (this.Config.farmcavechoicemushrooms)
+                    {
+                        Game1.MasterPlayer.caveChoice.Value = 2;
+                        (Game1.getLocationFromName("FarmCave") as FarmCave).setUpMushroomHouse();
+                    }
+                    else
+                    {
+                        Game1.MasterPlayer.caveChoice.Value = 1;
+                    }
+                }
+                //community center unlock
+                if (!Game1.player.eventsSeen.Contains(611439))
+                {
+
+                    Game1.player.eventsSeen.Add(611439);
+                    Game1.MasterPlayer.mailReceived.Add("ccDoorUnlock");
+                }
+                if (this.Config.upgradeHouse != 0 && Game1.player.HouseUpgradeLevel != this.Config.upgradeHouse)
+                {
+                    Game1.player.HouseUpgradeLevel = this.Config.upgradeHouse;
+                }
+                // just turns off server mod if the game gets exited back to title screen
+                if (Game1.activeClickableMenu is TitleMenu)
+                {
+                    IsEnabled = false;
+                }
+            }
+        }
+
+
+        /// <summary>Raised after the in-game clock time changes.</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        public void OnTimeChanged(object sender, TimeChangedEventArgs e)
+        {
+            // auto-sleep and Holiday code
+            currentTime = Game1.timeOfDay;
+            currentDate = SDate.Now();
+            eggFestival = new SDate(13, "spring");
+            dayAfterEggFestival = new SDate(14, "spring");
+            flowerDance = new SDate(24, "spring");
+            luau = new SDate(11, "summer");
+            danceOfJellies = new SDate(28, "summer");
+            stardewValleyFair = new SDate(16, "fall");
+            spiritsEve = new SDate(27, "fall");
+            festivalOfIce = new SDate(8, "winter");
+            feastOfWinterStar = new SDate(25, "winter");
+            grampasGhost = new SDate(1, "spring", 3);
+            if (IsEnabled)
+            {
+                gameClockTicks += 1;
+
+                if (gameClockTicks >= 3)
+                {
+                    if (currentDate == eggFestival && (numPlayers >= 1 || debug))   //set back to 1 after testing~!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Egg Festival Today!");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+
+                        }
+                        EggFestival();
+                    }
+
+
+                    //flower dance message changed to disabled bc it causes crashes
+                    else if (currentDate == flowerDance && numPlayers >= 1)
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Flower Dance Today.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+
+                        }
+                        FlowerDance();
+                    }
+
+                    else if (currentDate == luau && numPlayers >= 1)
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Luau Today!");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        Luau();
+                    }
+
+                    else if (currentDate == danceOfJellies && numPlayers >= 1)
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Dance of the Moonlight Jellies Tonight!");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 12:00 A.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        DanceOfTheMoonlightJellies();
+                    }
+
+                    else if (currentDate == stardewValleyFair && numPlayers >= 1)
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Stardew Valley Fair Today!");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 3:00 P.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        StardewValleyFair();
+                    }
+
+                    else if (currentDate == spiritsEve && numPlayers >= 1)
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Spirit's Eve Tonight!");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 12:00 A.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        SpiritsEve();
+                    }
+
+                    else if (currentDate == festivalOfIce && numPlayers >= 1)
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Festival of Ice Today!");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        FestivalOfIce();
+                    }
+
+                    else if (currentDate == feastOfWinterStar && numPlayers >= 1)
+                    {
+                        FestivalsToggle();
+
+                        if (currentTime >= 600 && currentTime <= 630)
+                        {
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("Feast of the Winter Star Today!");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                            Game1.chatBox.activate();
+                            Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
+                            Game1.chatBox.chatBox.RecieveCommandInput('\r');
+                        }
+                        FeastOfWinterStar();
+                    }
+
+                    else if (currentTime >= this.Config.timeOfDayToSleep && numPlayers >= 1)  //turn back to 1 after testing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    {
+                        GoToBed();
+                    }
+
+                    gameClockTicks = 0;
+                }
+            }
+
+            //handles various events that the host normally has to click through
             if (IsEnabled)
             {
 
@@ -1202,266 +1455,8 @@ namespace Always_On_Server
                         Game1.player.increaseBackpackSize(1);
                         Game1.warpFarmer("Beach", 1, 20, 1);
                     }
-
-                }
-
-            }
-        }
-        private void InstantAutoHandler(object sender, EventArgs e)
-        {
-
-            if (IsEnabled)
-            {
-                //lockPlayerChests
-                if (this.Config.lockPlayerChests)
-                {
-                    foreach (Farmer farmer in Game1.getOnlineFarmers())
-                    {
-                        if (farmer.currentLocation is Cabin cabin && farmer != cabin.owner)
-                        {
-                            //locks player inventories
-                            NetMutex playerinventory = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
-                            playerinventory.RequestLock();
-
-                            //locks all chests
-                            foreach (SObject x in cabin.objects.Values)
-                            {
-                                if (x is Chest chest)
-                                {
-                                    //removed, the game stores color id's strangely, other colored chests randomly unlocking
-                                    /*if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
-                                    {
-                                        return;
-                                    }*/
-                                    //else
-                                    {
-                                        chest.mutex.RequestLock();
-                                    }
-                                }
-                            }
-                            //locks fridge
-                            cabin.fridge.Value.mutex.RequestLock();
-                        }
-                    }
-
-                }
-
-
-                //petchoice
-                if (!Game1.player.hasPet())
-                {
-                    this.Helper.Reflection.GetMethod(new Event(), "namePet").Invoke(this.Config.petname.Substring(0));
-                }
-                if (Game1.player.hasPet() && Game1.getCharacterFromName(Game1.player.getPetName()) is Pet pet)
-                {
-                    pet.Name = this.Config.petname.Substring(0);
-                    pet.displayName = this.Config.petname.Substring(0);
-                }
-                //cave choice unlock 
-                if (!Game1.player.eventsSeen.Contains(65))
-                {
-                    Game1.player.eventsSeen.Add(65);
-
-
-                    if (this.Config.farmcavechoicemushrooms)
-                    {
-                        Game1.MasterPlayer.caveChoice.Value = 2;
-                        (Game1.getLocationFromName("FarmCave") as FarmCave).setUpMushroomHouse();
-                    }
-                    else
-                    {
-                        Game1.MasterPlayer.caveChoice.Value = 1;
-                    }
-                }
-                //community center unlock
-                if (!Game1.player.eventsSeen.Contains(611439))
-                {
-
-                    Game1.player.eventsSeen.Add(611439);
-                    Game1.MasterPlayer.mailReceived.Add("ccDoorUnlock");
-                }
-                if (this.Config.upgradeHouse != 0 && Game1.player.HouseUpgradeLevel != this.Config.upgradeHouse)
-                {
-                    Game1.player.HouseUpgradeLevel = this.Config.upgradeHouse;
-                }
-                // just turns off server mod if the game gets exited back to title screen
-                if (Game1.activeClickableMenu is TitleMenu)
-                {
-                    IsEnabled = false;
                 }
             }
-        }
-
-
-        // auto-sleep and Holiday code
-        public void TimeEvents_TimeOfDayChanged(object sender, EventArgs e)
-        {
-            currentTime = Game1.timeOfDay;
-            currentDate = SDate.Now();
-            eggFestival = new SDate(13, "spring");
-            dayAfterEggFestival = new SDate(14, "spring");
-            flowerDance = new SDate(24, "spring");
-            luau = new SDate(11, "summer");
-            danceOfJellies = new SDate(28, "summer");
-            stardewValleyFair = new SDate(16, "fall");
-            spiritsEve = new SDate(27, "fall");
-            festivalOfIce = new SDate(8, "winter");
-            feastOfWinterStar = new SDate(25, "winter");
-            grampasGhost = new SDate(1, "spring", 3);
-
-            if (!IsEnabled) // server toggle
-                return;
-
-
-
-            gameClockTicks += 1;
-
-
-            if (gameClockTicks >= 3)
-            {
-
-
-
-                if (currentDate == eggFestival && (numPlayers >= 1 || debug))   //set back to 1 after testing~!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Egg Festival Today!");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-
-                    }
-                    EggFestival();
-                }
-
-
-                //flower dance message changed to disabled bc it causes crashes
-                else if (currentDate == flowerDance && numPlayers >= 1)
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Flower Dance Today.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-
-                    }
-                    FlowerDance();
-                }
-
-                else if (currentDate == luau && numPlayers >= 1)
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Luau Today!");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    }
-                    Luau();
-                }
-
-                else if (currentDate == danceOfJellies && numPlayers >= 1)
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Dance of the Moonlight Jellies Tonight!");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 12:00 A.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    }
-                    DanceOfTheMoonlightJellies();
-                }
-
-                else if (currentDate == stardewValleyFair && numPlayers >= 1)
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Stardew Valley Fair Today!");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 3:00 P.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    }
-                    StardewValleyFair();
-                }
-
-                else if (currentDate == spiritsEve && numPlayers >= 1)
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Spirit's Eve Tonight!");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 12:00 A.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    }
-                    SpiritsEve();
-                }
-
-                else if (currentDate == festivalOfIce && numPlayers >= 1)
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Festival of Ice Today!");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    }
-                    FestivalOfIce();
-                }
-
-                else if (currentDate == feastOfWinterStar && numPlayers >= 1)
-                {
-                    FestivalsToggle();
-
-                    if (currentTime >= 600 && currentTime <= 630)
-                    {
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("Feast of the Winter Star Today!");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                        Game1.chatBox.activate();
-                        Game1.chatBox.setText("I will not be in bed until after 2:00 P.M.");
-                        Game1.chatBox.chatBox.RecieveCommandInput('\r');
-                    }
-                    FeastOfWinterStar();
-                }
-
-                else if (currentTime >= this.Config.timeOfDayToSleep && numPlayers >= 1)  //turn back to 1 after testing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                {
-                    GoToBed();
-                }
-
-                gameClockTicks = 0;
-            }
-
         }
 
         public void EggFestival()
@@ -1721,7 +1716,6 @@ namespace Always_On_Server
                 bedX = 27;
                 bedY = 13;
             }
-
         }
 
         private void GoToBed()
@@ -1730,33 +1724,33 @@ namespace Always_On_Server
 
             Game1.warpFarmer("Farmhouse", bedX, bedY, false);
 
-
             this.Helper.Reflection.GetMethod(Game1.currentLocation, "startSleep").Invoke();
             Game1.displayHUD = true;
-
         }
 
-
-
-        // shipping menu"OK" click through code
-        private void Shipping_Menu(object sender, EventArgs e)
+        /// <summary>Raised before the game begins writes data to the save file (except the initial save creation).</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        private void OnSaving(object sender, SavingEventArgs e)
         {
             if (!IsEnabled) // server toggle
                 return;
 
+            // shipping menu "OK" click through code
             this.Monitor.Log("This is the Shipping Menu");
             shippingMenuActive = true;
             if (Game1.activeClickableMenu is ShippingMenu)
             {
                 this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "okClicked").Invoke();
             }
-
         }
 
-        //resets server connection after certain amount of time end of day
-        private void Sync(object sender, EventArgs e)
+        /// <summary>Raised after the game state is updated (≈60 times per second), regardless of normal SMAPI validation. This event is not thread-safe and may be invoked while game logic is running asynchronously. Changes to game state in this method may crash the game or corrupt an in-progress save. Do not use this event unless you're fully aware of the context in which your code will be run. Mods using this event will trigger a stability warning in the SMAPI console.</summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event data.</param>
+        private void OnUnvalidatedUpdateTick(object sender, UnvalidatedUpdateTickedEventArgs e)
         {
-
+            //resets server connection after certain amount of time end of day
             if (Game1.timeOfDay >= this.Config.timeOfDayToSleep || Game1.timeOfDay == 600 && currentDateForReset != danceOfJelliesForReset && currentDateForReset != spiritsEveForReset && this.Config.endofdayTimeOut != 0)
             {
 
@@ -1799,24 +1793,12 @@ namespace Always_On_Server
                 Game1.options.setServerMode("online");
                 timeOutTicksForReset = 0;
                 shippingMenuTimeoutTicks = 0;
-
-
-
             }
+
             if (Game1.timeOfDay == 2600)
             {
-
                 Game1.paused = false;
-
-
-
             }
-
         }
-
-
-
-
-
     }
 }

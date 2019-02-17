@@ -1,10 +1,10 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using StardewModdingAPI;
 
 namespace Always_On_Server.Framework
 {
     class ModConfig
     {
-        public string serverHotKey { get; set; } = Keys.F9.ToString();
+        public SButton serverHotKey { get; set; } = SButton.F9;
 
         public int profitmargin { get; set; } = 100;
         public int upgradeHouse { get; set; } = 0;
@@ -16,7 +16,7 @@ namespace Always_On_Server.Framework
         public bool lockPlayerChests { get; set; } = true;
         public bool clientsCanPause { get; set; } = false;
         public bool copyInviteCodeToClipboard { get; set; } = true;
-        
+
 
         public bool festivalsOn { get; set; } = true;
         public int eggHuntCountDownConfig { get; set; } = 60;
@@ -36,6 +36,6 @@ namespace Always_On_Server.Framework
         public int luauTimeOut { get; set; } = 120;
         public int danceOfJelliesTimeOut { get; set; } = 120;
         public int festivalOfIceTimeOut { get; set; } = 120;
-        
+
     }
 }
