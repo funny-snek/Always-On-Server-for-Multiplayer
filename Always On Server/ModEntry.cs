@@ -26,7 +26,9 @@ namespace Always_On_Server
         private int gameTicks; //stores 1s game ticks for pause code
         private int gameClockTicks; //stores in game clock change 
         private int numPlayers; //stores number of players
-        private bool IsEnabled;  //stores if the the server mod is enabled 
+
+        /// <summary>Whether the main player is currently being automated.</summary>
+        private bool IsAutomating;
         public int bedX;
         public int bedY;
         public bool clientPaused;
@@ -105,7 +107,7 @@ namespace Always_On_Server
 
             this.Config = this.Helper.ReadConfig<ModConfig>();
 
-            helper.ConsoleCommands.Add("server", "Toggles headless server on/off", this.ServerToggle);
+            helper.ConsoleCommands.Add("server", "Toggles headless 'auto mode' on/off", this.ToggleAutoMode);
             helper.ConsoleCommands.Add("debug_server", "Turns debug mode on/off, lets server run when no players are connected", this.DebugToggle);
 
             helper.Events.GameLoop.SaveLoaded += this.OnSaveLoaded;
@@ -145,9 +147,9 @@ namespace Always_On_Server
                 Game1.player.FishingLevel = 10;
                 Game1.player.CombatLevel = 10;
                 ////////////////////////////////////////
-                IsEnabled = true;
-                Game1.chatBox.addInfoMessage("The Host is in Server Mode!");
-                this.Monitor.Log("Server Mode On!", LogLevel.Info);
+                IsAutomating = true;
+                Game1.chatBox.addInfoMessage("The host is in automatic mode!");
+                this.Monitor.Log("Auto Mode On!", LogLevel.Info);
             }
 
         }
@@ -191,10 +193,10 @@ namespace Always_On_Server
         private void OnRendered(object sender, RenderedEventArgs e)
         {
             //draw a textbox in the top left corner saying Server On
-            if (Game1.options.enableServer && IsEnabled)
+            if (Game1.options.enableServer && IsAutomating)
             {
                 int connectionsCount = Game1.server.connectionsCount;
-                DrawTextBox(5, 100, Game1.dialogueFont, "Server Mode On");
+                DrawTextBox(5, 100, Game1.dialogueFont, "Auto Mode On");
                 DrawTextBox(5, 180, Game1.dialogueFont, $"Press {this.Config.serverHotKey} On/Off");
                 float profitMargin = this.Config.profitmargin;
                 DrawTextBox(5, 260, Game1.dialogueFont, $"Profit Margin: {profitMargin}%");
@@ -208,22 +210,22 @@ namespace Always_On_Server
         }
 
 
-        // toggles server on/off with console command "server"
-        private void ServerToggle(string command, string[] args)
+        // toggles auto mode on/off with console command "server"
+        private void ToggleAutoMode(string command, string[] args)
         {
             if (Context.IsWorldReady)
             {
-                if (!IsEnabled)
+                if (!IsAutomating)
                 {
                     Helper.ReadConfig<ModConfig>();
-                    IsEnabled = true;
+                    IsAutomating = true;
 
 
-                    this.Monitor.Log("Server Mode On!", LogLevel.Info);
-                    Game1.chatBox.addInfoMessage("The Host is in Server Mode!");
+                    this.Monitor.Log("Auto mode on!", LogLevel.Info);
+                    Game1.chatBox.addInfoMessage("The host is in automatic mode!");
 
                     Game1.displayHUD = true;
-                    Game1.addHUDMessage(new HUDMessage("Server Mode On!", ""));
+                    Game1.addHUDMessage(new HUDMessage("Auto Mode On!", ""));
 
                     Game1.options.pauseWhenOutOfFocus = false;
 
@@ -246,13 +248,13 @@ namespace Always_On_Server
                 }
                 else
                 {
-                    IsEnabled = false;
-                    this.Monitor.Log("The server off!", LogLevel.Info);
+                    IsAutomating = false;
+                    this.Monitor.Log("Auto mode off!", LogLevel.Info);
 
-                    Game1.chatBox.addInfoMessage("The Host has returned!");
+                    Game1.chatBox.addInfoMessage("The host has returned!");
 
                     Game1.displayHUD = true;
-                    Game1.addHUDMessage(new HUDMessage("Server Mode Off!", ""));
+                    Game1.addHUDMessage(new HUDMessage("Auto Mode Off!", ""));
 
                     //set player levels to stored levels
                     var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
@@ -276,15 +278,15 @@ namespace Always_On_Server
             {
                 if (e.Button == this.Config.serverHotKey)
                 {
-                    if (!IsEnabled)
+                    if (!IsAutomating)
                     {
                         Helper.ReadConfig<ModConfig>();
-                        IsEnabled = true;
-                        this.Monitor.Log("The server is on!", LogLevel.Info);
-                        Game1.chatBox.addInfoMessage("The Host is in Server Mode!");
+                        IsAutomating = true;
+                        this.Monitor.Log("Auto mode on!", LogLevel.Info);
+                        Game1.chatBox.addInfoMessage("The host is in automatic mode!");
 
                         Game1.displayHUD = true;
-                        Game1.addHUDMessage(new HUDMessage("Server Mode On!", ""));
+                        Game1.addHUDMessage(new HUDMessage("Auto Mode On!", ""));
 
                         Game1.options.pauseWhenOutOfFocus = false;
                         // store levels, set in game levels to max
@@ -304,13 +306,13 @@ namespace Always_On_Server
                     }
                     else
                     {
-                        IsEnabled = false;
-                        this.Monitor.Log("The server is off!", LogLevel.Info);
+                        IsAutomating = false;
+                        this.Monitor.Log("Auto mode off!", LogLevel.Info);
 
-                        Game1.chatBox.addInfoMessage("The Host has returned!");
+                        Game1.chatBox.addInfoMessage("The host has returned!");
 
                         Game1.displayHUD = true;
-                        Game1.addHUDMessage(new HUDMessage("Server Mode Off!", ""));
+                        Game1.addHUDMessage(new HUDMessage("Auto Mode Off!", ""));
                         //set player levels to stored levels
                         var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
                         Game1.player.FarmingLevel = data.FarmingLevel;
@@ -348,16 +350,14 @@ namespace Always_On_Server
         /// <param name="e">The event data.</param>
         private void OnOneSecondUpdateTicked(object sender, OneSecondUpdateTickedEventArgs e)
         {
-            if (!IsEnabled) // server toggle
-            {
+            // pause if no players present
+            if (this.IsAutomating)
+                this.PauseIfNobodyPresent();
+            else
                 Game1.paused = false;
-                return;
-            }
 
-
-            NoClientsPause();
-
-            if (this.Config.clientsCanPause)
+            // toggle pause if requested
+            if (this.IsAutomating && this.Config.clientsCanPause)
             {
                 List<ChatMessage> messages = this.Helper.Reflection.GetField<List<ChatMessage>>(Game1.chatBox, "messages").GetValue();
                 if (messages.Count > 0)
@@ -423,7 +423,7 @@ namespace Always_On_Server
 
                     try
                     {
-                        File.WriteAllText( Path.Combine(this.Helper.DirectoryPath, "ConnectionsCount.txt"), connectionsCount.ToString());
+                        File.WriteAllText(Path.Combine(this.Helper.DirectoryPath, "ConnectionsCount.txt"), connectionsCount.ToString());
                     }
                     catch (Exception b)
                     {
@@ -434,35 +434,20 @@ namespace Always_On_Server
 
             //left click menu spammer and event skipper to get through random events happening
             //also moves player around, this seems to free host from random bugs sometimes
-            if (IsEnabled) // server toggle
+            if (IsAutomating)
             {
-
                 if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is DialogueBox)
                 {
-
                     Game1.activeClickableMenu.receiveLeftClick(10, 10);
-
                 }
                 if (Game1.CurrentEvent != null && Game1.CurrentEvent.skippable)
                 {
                     Game1.CurrentEvent.skipEvent();
                 }
-                /*if (!playerMovedRight && Game1.player.canMove)
-                {
-                    Game1.player.tryToMoveInDirection(1, true, 0, false);
-                    playerMovedRight = true;
-                }
-                else if (playerMovedRight && Game1.player.canMove)
-                {
-                    Game1.player.tryToMoveInDirection(3, true, 0, false);
-                    playerMovedRight = false;
-                }*/
             }
 
-
-
-            //disable friendship decay
-            if (IsEnabled) // server toggle
+            // disable friendship decay
+            if (IsAutomating)
             {
                 if (this.PreviousFriendships.Any())
                 {
@@ -479,300 +464,281 @@ namespace Always_On_Server
                     this.PreviousFriendships[pair.Key] = pair.Value.Value.Points;
             }
 
-
-
-
-
-
-
-            //eggHunt event
-            if (eggHuntAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+            // automate events
+            if (this.IsAutomating)
             {
-                if (eventCommandUsed)
+                // egg-hunt event
+                if (eggHuntAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                 {
-                    eggHuntCountDown = this.Config.eggHuntCountDownConfig;
-                    eventCommandUsed = false;
-                }
-                eggHuntCountDown += 1;
-
-                float chatEgg = this.Config.eggHuntCountDownConfig / 60f;
-                if (eggHuntCountDown == 1)
-                {
-                    this.SendChatMessage($"The Egg Hunt will begin in {chatEgg:0.#} minutes.");
-                }
-
-                if (eggHuntCountDown == this.Config.eggHuntCountDownConfig + 1)
-                {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
-                }
-                if (eggHuntCountDown >= this.Config.eggHuntCountDownConfig + 5)
-                {
-                    if (Game1.activeClickableMenu != null)
+                    if (eventCommandUsed)
                     {
-                        //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        eggHuntCountDown = this.Config.eggHuntCountDownConfig;
+                        eventCommandUsed = false;
                     }
-                    //festival timeout
+                    eggHuntCountDown += 1;
+
+                    float chatEgg = this.Config.eggHuntCountDownConfig / 60f;
+                    if (eggHuntCountDown == 1)
+                    {
+                        this.SendChatMessage($"The Egg Hunt will begin in {chatEgg:0.#} minutes.");
+                    }
+
+                    if (eggHuntCountDown == this.Config.eggHuntCountDownConfig + 1)
+                    {
+                        this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    }
+                    if (eggHuntCountDown >= this.Config.eggHuntCountDownConfig + 5)
+                    {
+                        if (Game1.activeClickableMenu != null)
+                        {
+                            //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        }
+                        //festival timeout
+                        festivalTicksForReset += 1;
+                        if (festivalTicksForReset >= this.Config.eggFestivalTimeOut + 180)
+                        {
+                            Game1.options.setServerMode("offline");
+                        }
+                        ///////////////////////////////////////////////
+                    }
+                }
+
+                // flower dance event
+                if (Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                {
+                    if (eventCommandUsed)
+                    {
+                        flowerDanceCountDown = this.Config.flowerDanceCountDownConfig;
+                        eventCommandUsed = false;
+                    }
+
+                    flowerDanceCountDown += 1;
+
+                    float chatFlower = this.Config.flowerDanceCountDownConfig / 60f;
+                    if (flowerDanceCountDown == 1)
+                    {
+                        this.SendChatMessage($"The Flower Dance will begin in {chatFlower:0.#} minutes.");
+                    }
+
+                    if (flowerDanceCountDown == this.Config.flowerDanceCountDownConfig + 1)
+                    {
+                        this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    }
+                    if (flowerDanceCountDown >= this.Config.flowerDanceCountDownConfig + 5)
+                    {
+                        if (Game1.activeClickableMenu != null)
+                        {
+                            // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        }
+
+                        //festival timeout
+                        festivalTicksForReset += 1;
+                        if (festivalTicksForReset >= this.Config.flowerDanceTimeOut + 90)
+                        {
+                            Game1.options.setServerMode("offline");
+                        }
+                        ///////////////////////////////////////////////
+                    }
+                }
+
+                //luauSoup event
+                if (luauSoupAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                {
+                    if (eventCommandUsed)
+                    {
+                        luauSoupCountDown = this.Config.luauSoupCountDownConfig;
+                        //add iridium starfruit to soup
+                        var item = new SObject(268, 1, false, -1, 3);
+                        this.Helper.Reflection.GetMethod(new Event(), "addItemToLuauSoup").Invoke(item, Game1.player);
+                        eventCommandUsed = false;
+                    }
+
+                    luauSoupCountDown += 1;
+
+                    float chatSoup = this.Config.luauSoupCountDownConfig / 60f;
+                    if (luauSoupCountDown == 1)
+                    {
+                        this.SendChatMessage($"The Soup Tasting will begin in {chatSoup:0.#} minutes.");
+
+                        //add iridium starfruit to soup
+                        var item = new SObject(268, 1, false, -1, 3);
+                        this.Helper.Reflection.GetMethod(new Event(), "addItemToLuauSoup").Invoke(item, Game1.player);
+                    }
+
+                    if (luauSoupCountDown == this.Config.luauSoupCountDownConfig + 1)
+                    {
+                        this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    }
+                    if (luauSoupCountDown >= this.Config.luauSoupCountDownConfig + 5)
+                    {
+                        if (Game1.activeClickableMenu != null)
+                        {
+                            //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        }
+                        //festival timeout
+                        festivalTicksForReset += 1;
+                        if (festivalTicksForReset >= this.Config.luauTimeOut + 80)
+                        {
+                            Game1.options.setServerMode("offline");
+                        }
+                        ///////////////////////////////////////////////
+                    }
+                }
+
+                //Dance of the Moonlight Jellies event
+                if (jellyDanceAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                {
+                    if (eventCommandUsed)
+                    {
+                        jellyDanceCountDown = this.Config.jellyDanceCountDownConfig;
+                        eventCommandUsed = false;
+                    }
+
+                    jellyDanceCountDown += 1;
+
+                    float chatJelly = this.Config.jellyDanceCountDownConfig / 60f;
+                    if (jellyDanceCountDown == 1)
+                    {
+                        this.SendChatMessage($"The Dance of the Moonlight Jellies will begin in {chatJelly:0.#} minutes.");
+                    }
+
+                    if (jellyDanceCountDown == this.Config.jellyDanceCountDownConfig + 1)
+                    {
+                        this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    }
+                    if (jellyDanceCountDown >= this.Config.jellyDanceCountDownConfig + 5)
+                    {
+                        if (Game1.activeClickableMenu != null)
+                        {
+                            // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        }
+                        //festival timeout
+                        festivalTicksForReset += 1;
+                        if (festivalTicksForReset >= this.Config.danceOfJelliesTimeOut + 180)
+                        {
+                            Game1.options.setServerMode("offline");
+                        }
+                        ///////////////////////////////////////////////
+                    }
+                }
+
+                //Grange Display event
+                if (grangeDisplayAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                {
+                    if (eventCommandUsed)
+                    {
+                        grangeDisplayCountDown = this.Config.grangeDisplayCountDownConfig;
+                        eventCommandUsed = false;
+                    }
+
+                    grangeDisplayCountDown += 1;
                     festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.eggFestivalTimeOut + 180)
+                    //festival timeout code
+                    if (festivalTicksForReset == this.Config.fairTimeOut - 120)
+                    {
+                        this.SendChatMessage("2 minutes to the exit or");
+                        this.SendChatMessage("everyone will be kicked.");
+                    }
+                    if (festivalTicksForReset >= this.Config.fairTimeOut)
                     {
                         Game1.options.setServerMode("offline");
                     }
                     ///////////////////////////////////////////////
-
-
-                }
-            }
-
-
-            //flowerDance event
-            if (flowerDanceAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-            {
-                if (eventCommandUsed)
-                {
-                    flowerDanceCountDown = this.Config.flowerDanceCountDownConfig;
-                    eventCommandUsed = false;
-                }
-
-                flowerDanceCountDown += 1;
-
-                float chatFlower = this.Config.flowerDanceCountDownConfig / 60f;
-                if (flowerDanceCountDown == 1)
-                {
-                    this.SendChatMessage($"The Flower Dance will begin in {chatFlower:0.#} minutes.");
-                }
-
-                if (flowerDanceCountDown == this.Config.flowerDanceCountDownConfig + 1)
-                {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
-                }
-                if (flowerDanceCountDown >= this.Config.flowerDanceCountDownConfig + 5)
-                {
-                    if (Game1.activeClickableMenu != null)
+                    float chatGrange = this.Config.grangeDisplayCountDownConfig / 60f;
+                    if (grangeDisplayCountDown == 1)
                     {
-                        // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        this.SendChatMessage($"The Grange Judging will begin in {chatGrange:0.#} minutes.");
                     }
 
-                    //festival timeout
+                    if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 1)
+                    {
+                        this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    }
+                    if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 5)
+                        this.LeaveFestival();
+                }
+
+                //golden pumpkin maze event
+                if (goldenPumpkinAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                {
+                    goldenPumpkinCountDown += 1;
                     festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.flowerDanceTimeOut + 90)
+                    //festival timeout code
+                    if (festivalTicksForReset == this.Config.spiritsEveTimeOut - 120)
+                    {
+                        this.SendChatMessage("2 minutes to the exit or");
+                        this.SendChatMessage("everyone will be kicked.");
+                    }
+                    if (festivalTicksForReset >= this.Config.spiritsEveTimeOut)
                     {
                         Game1.options.setServerMode("offline");
                     }
                     ///////////////////////////////////////////////
-
-                }
-            }
-
-            //luauSoup event
-            if (luauSoupAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-            {
-                if (eventCommandUsed)
-                {
-                    luauSoupCountDown = this.Config.luauSoupCountDownConfig;
-                    //add iridium starfruit to soup
-                    var item = new SObject(268, 1, false, -1, 3);
-                    this.Helper.Reflection.GetMethod(new Event(), "addItemToLuauSoup").Invoke(item, Game1.player);
-                    eventCommandUsed = false;
-
+                    if (goldenPumpkinCountDown == 10)
+                        this.LeaveFestival();
                 }
 
-                luauSoupCountDown += 1;
-
-                float chatSoup = this.Config.luauSoupCountDownConfig / 60f;
-                if (luauSoupCountDown == 1)
+                //ice fishing event
+                if (iceFishingAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                 {
-                    this.SendChatMessage($"The Soup Tasting will begin in {chatSoup:0.#} minutes.");
-
-                    //add iridium starfruit to soup
-                    var item = new SObject(268, 1, false, -1, 3);
-                    this.Helper.Reflection.GetMethod(new Event(), "addItemToLuauSoup").Invoke(item, Game1.player);
-
-                }
-
-                if (luauSoupCountDown == this.Config.luauSoupCountDownConfig + 1)
-                {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
-                }
-                if (luauSoupCountDown >= this.Config.luauSoupCountDownConfig + 5)
-                {
-                    if (Game1.activeClickableMenu != null)
+                    if (eventCommandUsed)
                     {
-                        //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        iceFishingCountDown = this.Config.iceFishingCountDownConfig;
+                        eventCommandUsed = false;
                     }
-                    //festival timeout
+                    iceFishingCountDown += 1;
+
+                    float chatIceFish = this.Config.iceFishingCountDownConfig / 60f;
+                    if (iceFishingCountDown == 1)
+                    {
+                        this.SendChatMessage($"The Ice Fishing Contest will begin in {chatIceFish:0.#} minutes.");
+                    }
+
+                    if (iceFishingCountDown == this.Config.iceFishingCountDownConfig + 1)
+                    {
+                        this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
+                    }
+                    if (iceFishingCountDown >= this.Config.iceFishingCountDownConfig + 5)
+                    {
+                        if (Game1.activeClickableMenu != null)
+                        {
+                            //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
+                        }
+                        //festival timeout
+                        festivalTicksForReset += 1;
+                        if (festivalTicksForReset >= this.Config.festivalOfIceTimeOut + 180)
+                        {
+                            Game1.options.setServerMode("offline");
+                        }
+                        ///////////////////////////////////////////////
+                    }
+                }
+
+                //Feast of the Winter event
+                if (winterFeastAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
+                {
+                    winterFeastCountDown += 1;
                     festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.luauTimeOut + 80)
+                    //festival timeout code
+                    if (festivalTicksForReset == this.Config.winterStarTimeOut - 120)
+                    {
+                        this.SendChatMessage("2 minutes to the exit or");
+                        this.SendChatMessage("everyone will be kicked.");
+                    }
+                    if (festivalTicksForReset >= this.Config.winterStarTimeOut)
                     {
                         Game1.options.setServerMode("offline");
                     }
                     ///////////////////////////////////////////////
-
-
+                    if (winterFeastCountDown == 10)
+                        this.LeaveFestival();
                 }
-            }
-
-            //Dance of the Moonlight Jellies event
-            if (jellyDanceAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-            {
-                if (eventCommandUsed)
-                {
-                    jellyDanceCountDown = this.Config.jellyDanceCountDownConfig;
-                    eventCommandUsed = false;
-                }
-
-                jellyDanceCountDown += 1;
-
-                float chatJelly = this.Config.jellyDanceCountDownConfig / 60f;
-                if (jellyDanceCountDown == 1)
-                {
-                    this.SendChatMessage($"The Dance of the Moonlight Jellies will begin in {chatJelly:0.#} minutes.");
-                }
-
-                if (jellyDanceCountDown == this.Config.jellyDanceCountDownConfig + 1)
-                {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
-                }
-                if (jellyDanceCountDown >= this.Config.jellyDanceCountDownConfig + 5)
-                {
-                    if (Game1.activeClickableMenu != null)
-                    {
-                        // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
-                    }
-                    //festival timeout
-                    festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.danceOfJelliesTimeOut + 180)
-                    {
-                        Game1.options.setServerMode("offline");
-                    }
-                    ///////////////////////////////////////////////
-
-                }
-            }
-
-            //Grange Display event
-            if (grangeDisplayAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-            {
-                if (eventCommandUsed)
-                {
-                    grangeDisplayCountDown = this.Config.grangeDisplayCountDownConfig;
-                    eventCommandUsed = false;
-                }
-
-                grangeDisplayCountDown += 1;
-                festivalTicksForReset += 1;
-                //festival timeout code
-                if (festivalTicksForReset == this.Config.fairTimeOut - 120)
-                {
-                    this.SendChatMessage("2 minutes to the exit or");
-                    this.SendChatMessage("everyone will be kicked.");
-                }
-                if (festivalTicksForReset >= this.Config.fairTimeOut)
-                {
-                    Game1.options.setServerMode("offline");
-                }
-                ///////////////////////////////////////////////
-                float chatGrange = this.Config.grangeDisplayCountDownConfig / 60f;
-                if (grangeDisplayCountDown == 1)
-                {
-                    this.SendChatMessage($"The Grange Judging will begin in {chatGrange:0.#} minutes.");
-                }
-
-                if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 1)
-                {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
-                }
-                if (grangeDisplayCountDown == this.Config.grangeDisplayCountDownConfig + 5)
-                    this.LeaveFestival();
-            }
-
-            //golden pumpkin maze event
-            if (goldenPumpkinAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-            {
-                goldenPumpkinCountDown += 1;
-                festivalTicksForReset += 1;
-                //festival timeout code
-                if (festivalTicksForReset == this.Config.spiritsEveTimeOut - 120)
-                {
-                    this.SendChatMessage("2 minutes to the exit or");
-                    this.SendChatMessage("everyone will be kicked.");
-                }
-                if (festivalTicksForReset >= this.Config.spiritsEveTimeOut)
-                {
-                    Game1.options.setServerMode("offline");
-                }
-                ///////////////////////////////////////////////
-                if (goldenPumpkinCountDown == 10)
-                    this.LeaveFestival();
-            }
-
-            //ice fishing event
-            if (iceFishingAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-            {
-                if (eventCommandUsed)
-                {
-                    iceFishingCountDown = this.Config.iceFishingCountDownConfig;
-                    eventCommandUsed = false;
-                }
-                iceFishingCountDown += 1;
-
-                float chatIceFish = this.Config.iceFishingCountDownConfig / 60f;
-                if (iceFishingCountDown == 1)
-                {
-                    this.SendChatMessage($"The Ice Fishing Contest will begin in {chatIceFish:0.#} minutes.");
-                }
-
-                if (iceFishingCountDown == this.Config.iceFishingCountDownConfig + 1)
-                {
-                    this.Helper.Reflection.GetMethod(Game1.CurrentEvent, "answerDialogueQuestion").Invoke(Game1.getCharacterFromName("Lewis"), "yes");
-                }
-                if (iceFishingCountDown >= this.Config.iceFishingCountDownConfig + 5)
-                {
-                    if (Game1.activeClickableMenu != null)
-                    {
-                        //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
-                    }
-                    //festival timeout
-                    festivalTicksForReset += 1;
-                    if (festivalTicksForReset >= this.Config.festivalOfIceTimeOut + 180)
-                    {
-                        Game1.options.setServerMode("offline");
-                    }
-                    ///////////////////////////////////////////////
-
-                }
-            }
-
-            //Feast of the Winter event
-            if (winterFeastAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
-            {
-                winterFeastCountDown += 1;
-                festivalTicksForReset += 1;
-                //festival timeout code
-                if (festivalTicksForReset == this.Config.winterStarTimeOut - 120)
-                {
-                    this.SendChatMessage("2 minutes to the exit or");
-                    this.SendChatMessage("everyone will be kicked.");
-                }
-                if (festivalTicksForReset >= this.Config.winterStarTimeOut)
-                {
-                    Game1.options.setServerMode("offline");
-                }
-                ///////////////////////////////////////////////
-                if (winterFeastCountDown == 10)
-                    this.LeaveFestival();
             }
         }
 
-
-
         //Pause game if no clients Code
-        private void NoClientsPause()
+        private void PauseIfNobodyPresent()
         {
-
-
-
-
-
             gameTicks += 1;
 
             if (gameTicks >= 3)
@@ -790,7 +756,6 @@ namespace Always_On_Server
                 else if (numPlayers <= 0 && Game1.timeOfDay >= 610 && Game1.timeOfDay <= 2500 && currentDate != eggFestival && currentDate != flowerDance && currentDate != luau && currentDate != danceOfJellies && currentDate != stardewValleyFair && currentDate != spiritsEve && currentDate != festivalOfIce && currentDate != feastOfWinterStar)
                 {
                     Game1.paused = true;
-
                 }
 
                 gameTicks = 0;
@@ -798,7 +763,7 @@ namespace Always_On_Server
 
 
             //handles client commands for sleep, go to festival, start festival event.
-            if (Context.IsWorldReady && IsEnabled)
+            if (Context.IsWorldReady && IsAutomating)
             {
                 List<ChatMessage> messages = this.Helper.Reflection.GetField<List<ChatMessage>>(Game1.chatBox, "messages").GetValue();
                 if (messages.Count > 0)
@@ -952,43 +917,42 @@ namespace Always_On_Server
         /// <param name="e">The event data.</param>
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
-            if (IsEnabled)
+            // lock player chests
+            if (this.Config.lockPlayerChests)
             {
-                //lockPlayerChests
-                if (this.Config.lockPlayerChests)
+                foreach (Farmer farmer in Game1.getOnlineFarmers())
                 {
-                    foreach (Farmer farmer in Game1.getOnlineFarmers())
+                    if (farmer.currentLocation is Cabin cabin && farmer != cabin.owner)
                     {
-                        if (farmer.currentLocation is Cabin cabin && farmer != cabin.owner)
-                        {
-                            //locks player inventories
-                            NetMutex playerinventory = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
-                            playerinventory.RequestLock();
+                        //locks player inventories
+                        NetMutex playerinventory = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
+                        playerinventory.RequestLock();
 
-                            //locks all chests
-                            foreach (SObject x in cabin.objects.Values)
+                        //locks all chests
+                        foreach (SObject x in cabin.objects.Values)
+                        {
+                            if (x is Chest chest)
                             {
-                                if (x is Chest chest)
+                                //removed, the game stores color id's strangely, other colored chests randomly unlocking
+                                /*if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
                                 {
-                                    //removed, the game stores color id's strangely, other colored chests randomly unlocking
-                                    /*if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
-                                    {
-                                        return;
-                                    }*/
-                                    //else
-                                    {
-                                        chest.mutex.RequestLock();
-                                    }
+                                    return;
+                                }*/
+                                //else
+                                {
+                                    chest.mutex.RequestLock();
                                 }
                             }
-                            //locks fridge
-                            cabin.fridge.Value.mutex.RequestLock();
                         }
+                        //locks fridge
+                        cabin.fridge.Value.mutex.RequestLock();
                     }
-
                 }
+            }
 
-
+            // automate choices
+            if (this.IsAutomating)
+            {
                 //petchoice
                 if (!Game1.player.hasPet())
                 {
@@ -1026,10 +990,10 @@ namespace Always_On_Server
                 {
                     Game1.player.HouseUpgradeLevel = this.Config.upgradeHouse;
                 }
-                // just turns off server mod if the game gets exited back to title screen
+                // just turns off auto mod if the game gets exited back to title screen
                 if (Game1.activeClickableMenu is TitleMenu)
                 {
-                    IsEnabled = false;
+                    IsAutomating = false;
                 }
             }
         }
@@ -1053,7 +1017,7 @@ namespace Always_On_Server
             festivalOfIce = new SDate(8, "winter");
             feastOfWinterStar = new SDate(25, "winter");
             grampasGhost = new SDate(1, "spring", 3);
-            if (IsEnabled)
+            if (IsAutomating)
             {
                 gameClockTicks += 1;
 
@@ -1169,7 +1133,7 @@ namespace Always_On_Server
             }
 
             //handles various events that the host normally has to click through
-            if (IsEnabled)
+            if (IsAutomating)
             {
 
                 if (currentDate != grampasGhost && currentDate != eggFestival && currentDate != flowerDance && currentDate != luau && currentDate != danceOfJellies && currentDate != stardewValleyFair && currentDate != spiritsEve && currentDate != festivalOfIce && currentDate != feastOfWinterStar)
@@ -1519,11 +1483,6 @@ namespace Always_On_Server
             }
         }
 
-
-
-
-
-
         private void getBedCoordinates()
         {
             int houseUpgradeLevel = Game1.player.HouseUpgradeLevel;
@@ -1559,15 +1518,13 @@ namespace Always_On_Server
         /// <param name="e">The event data.</param>
         private void OnSaving(object sender, SavingEventArgs e)
         {
-            if (!IsEnabled) // server toggle
-                return;
-
             // shipping menu "OK" click through code
-            this.Monitor.Log("This is the Shipping Menu");
-            shippingMenuActive = true;
-            if (Game1.activeClickableMenu is ShippingMenu)
+            if (IsAutomating)
             {
-                this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "okClicked").Invoke();
+                this.Monitor.Log("This is the Shipping Menu");
+                shippingMenuActive = true;
+                if (Game1.activeClickableMenu is ShippingMenu)
+                    this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "okClicked").Invoke();
             }
         }
 
@@ -1579,7 +1536,6 @@ namespace Always_On_Server
             //resets server connection after certain amount of time end of day
             if (Game1.timeOfDay >= this.Config.timeOfDayToSleep || Game1.timeOfDay == 600 && currentDateForReset != danceOfJelliesForReset && currentDateForReset != spiritsEveForReset && this.Config.endofdayTimeOut != 0)
             {
-
                 timeOutTicksForReset += 1;
                 var countdowntoreset = (2600 - this.Config.timeOfDayToSleep) * .01 * 6 * 7 * 60;
                 if (timeOutTicksForReset >= (countdowntoreset + (this.Config.endofdayTimeOut * 60)))
@@ -1591,24 +1547,21 @@ namespace Always_On_Server
             {
                 if (Game1.timeOfDay >= 2400 || Game1.timeOfDay == 600)
                 {
-
                     timeOutTicksForReset += 1;
                     if (timeOutTicksForReset >= (5040 + (this.Config.endofdayTimeOut * 60)))
                     {
                         Game1.options.setServerMode("offline");
                     }
                 }
-
             }
+
             if (shippingMenuActive && this.Config.endofdayTimeOut != 0)
             {
-
                 shippingMenuTimeoutTicks += 1;
                 if (shippingMenuTimeoutTicks >= this.Config.endofdayTimeOut * 60)
                 {
                     Game1.options.setServerMode("offline");
                 }
-
             }
 
             if (Game1.timeOfDay == 610)
