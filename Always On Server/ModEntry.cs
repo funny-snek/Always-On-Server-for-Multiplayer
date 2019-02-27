@@ -381,12 +381,9 @@ namespace Always_On_Server
                 }
             }
 
-
-
-            //Invite Code Copier 
+            // copy invite code to clipboard
             if (this.Config.copyInviteCodeToClipboard)
             {
-
                 if (Game1.options.enableServer)
                 {
                     if (inviteCode != Game1.server.getInviteCode())
@@ -397,38 +394,25 @@ namespace Always_On_Server
                 }
             }
 
-            //write code to a InviteCode.txt in the Always On Server mod folder
+            // write code to InviteCode.txt in the Always On Server mod folder
             if (Game1.options.enableServer)
             {
-                if (inviteCodeTXT != Game1.server.getInviteCode())
+                string invite = Game1.server.getInviteCode();
+                if (invite != inviteCodeTXT)
                 {
-
-
-                    inviteCodeTXT = Game1.server.getInviteCode();
+                    inviteCodeTXT = invite;
 
                     try
                     {
-
-                        //Pass the filepath and filename to the StreamWriter Constructor
-                        StreamWriter sw = new StreamWriter("Mods/Always On Server/InviteCode.txt");
-
-                        //Write a line of text
-                        sw.WriteLine(inviteCodeTXT);
-                        //Close the file
-                        sw.Close();
+                        File.WriteAllText(Path.Combine(this.Helper.DirectoryPath, "InviteCode.txt"), inviteCodeTXT);
                     }
                     catch (Exception b)
                     {
                         Console.WriteLine("Exception: " + b.Message);
                     }
-                    finally
-                    {
-                        Console.WriteLine("Executing finally block.");
-                    }
-
                 }
-
             }
+
             //write number of players online to .txt
             if (Game1.options.enableServer)
             {
@@ -439,26 +423,13 @@ namespace Always_On_Server
 
                     try
                     {
-
-                        //Pass the filepath and filename to the StreamWriter Constructor
-                        StreamWriter sw = new StreamWriter("Mods/Always On Server/ConnectionsCount.txt");
-
-                        //Write a line of text
-                        sw.WriteLine(connectionsCount);
-                        //Close the file
-                        sw.Close();
+                        File.WriteAllText( Path.Combine(this.Helper.DirectoryPath, "ConnectionsCount.txt"), connectionsCount.ToString());
                     }
                     catch (Exception b)
                     {
                         Console.WriteLine("Exception: " + b.Message);
                     }
-                    finally
-                    {
-                        Console.WriteLine("Executing finally block.");
-                    }
-
                 }
-
             }
 
             //left click menu spammer and event skipper to get through random events happening
