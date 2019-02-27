@@ -32,8 +32,7 @@ namespace Always_On_Server
         public int bedX;
         public int bedY;
         public bool clientPaused;
-        private string inviteCode = "a";
-        private string inviteCodeTXT = "a";
+        private string lastInviteCode = null;
 
         //debug tools
         private bool debug;
@@ -201,11 +200,8 @@ namespace Always_On_Server
                 float profitMargin = this.Config.profitmargin;
                 DrawTextBox(5, 260, Game1.dialogueFont, $"Profit Margin: {profitMargin}%");
                 DrawTextBox(5, 340, Game1.dialogueFont, $"{connectionsCount} Players Online");
-                if (Game1.server.getInviteCode() != null)
-                {
-                    string inviteCode = Game1.server.getInviteCode();
-                    DrawTextBox(5, 420, Game1.dialogueFont, $"Invite Code: {inviteCode}");
-                }
+                if (this.lastInviteCode != null)
+                    DrawTextBox(5, 420, Game1.dialogueFont, $"Invite Code: {this.lastInviteCode}");
             }
         }
 
@@ -381,42 +377,34 @@ namespace Always_On_Server
                 }
             }
 
-            // copy invite code to clipboard
-            if (this.Config.copyInviteCodeToClipboard)
+            // update invite code
+            if (Game1.options.enableServer && Game1.server != null)
             {
-                if (Game1.options.enableServer)
+                string inviteCode = Game1.server.getInviteCode();
+                if (inviteCode != this.lastInviteCode)
                 {
-                    if (inviteCode != Game1.server.getInviteCode())
-                    {
+                    // copy to clipboard
+                    if (this.Config.copyInviteCodeToClipboard)
                         DesktopClipboard.SetText($"Invite Code: {Game1.server.getInviteCode()}");
-                        inviteCode = Game1.server.getInviteCode();
-                    }
-                }
-            }
 
-            // write code to InviteCode.txt in the Always On Server mod folder
-            if (Game1.options.enableServer)
-            {
-                string invite = Game1.server.getInviteCode();
-                if (invite != inviteCodeTXT)
-                {
-                    inviteCodeTXT = invite;
-
+                    // write to file
                     try
                     {
-                        File.WriteAllText(Path.Combine(this.Helper.DirectoryPath, "InviteCode.txt"), inviteCodeTXT);
+                        File.WriteAllText(Path.Combine(this.Helper.DirectoryPath, "InviteCode.txt"), inviteCode);
                     }
                     catch (Exception b)
                     {
                         Console.WriteLine("Exception: " + b.Message);
                     }
+
+                    // remember code
+                    this.lastInviteCode = inviteCode;
                 }
             }
 
-            //write number of players online to .txt
-            if (Game1.options.enableServer)
+            // write number of players online to .txt
+            if (Game1.options.enableServer && Game1.server != null)
             {
-
                 if (connectionsCount != Game1.server.connectionsCount)
                 {
                     connectionsCount = Game1.server.connectionsCount;
