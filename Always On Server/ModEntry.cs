@@ -922,30 +922,22 @@ namespace Always_On_Server
             {
                 foreach (Farmer farmer in Game1.getOnlineFarmers())
                 {
-                    if (farmer.currentLocation is Cabin cabin && farmer != cabin.owner)
-                    {
-                        //locks player inventories
-                        NetMutex playerinventory = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
-                        playerinventory.RequestLock();
+                    if (farmer.IsMainPlayer)
+                        continue;
 
-                        //locks all chests
-                        foreach (SObject x in cabin.objects.Values)
+                    if (farmer.currentLocation is FarmHouse house && farmer != house.owner)
+                    {
+                        // lock offline player inventory
+                        if (house is Cabin cabin)
                         {
-                            if (x is Chest chest)
-                            {
-                                //removed, the game stores color id's strangely, other colored chests randomly unlocking
-                                /*if (chest.playerChoiceColor.Value.Equals(unlockedChestColor)) 
-                                {
-                                    return;
-                                }*/
-                                //else
-                                {
-                                    chest.mutex.RequestLock();
-                                }
-                            }
+                            NetMutex inventoryMutex = this.Helper.Reflection.GetField<NetMutex>(cabin, "inventoryMutex").GetValue();
+                            inventoryMutex.RequestLock();
                         }
-                        //locks fridge
-                        cabin.fridge.Value.mutex.RequestLock();
+
+                        // lock fridge & chests
+                        house.fridge.Value.mutex.RequestLock();
+                        foreach (Chest chest in house.objects.Values.OfType<Chest>())
+                            chest.mutex.RequestLock();
                     }
                 }
             }
