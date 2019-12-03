@@ -116,7 +116,7 @@ namespace Always_On_Server
             helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked; //handles various events that should occur as soon as they are available
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
             helper.Events.Display.Rendered += this.OnRendered;
-            helper.Events.Specialised.UnvalidatedUpdateTicked += OnUnvalidatedUpdateTick; //used bc only thing that gets throug save window
+            helper.Events.Specialized.UnvalidatedUpdateTicked += OnUnvalidatedUpdateTick; //used bc only thing that gets throug save window
         }
 
 
@@ -359,7 +359,7 @@ namespace Always_On_Server
                 if (messages.Count > 0)
                 {
                     var messagetoconvert = messages[messages.Count - 1].message;
-                    string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert);
+                    string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert, true);
                     string lastFragment = actualmessage.Split(' ')[1];
 
                     if (lastFragment != null && lastFragment == "!pause")
@@ -757,7 +757,7 @@ namespace Always_On_Server
                 if (messages.Count > 0)
                 {
                     var messagetoconvert = messages[messages.Count - 1].message;
-                    string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert);
+                    string actualmessage = ChatMessage.makeMessagePlaintext(messagetoconvert, true);
                     string lastFragment = actualmessage.Split(' ')[1];
 
                     if (lastFragment != null)
@@ -1159,53 +1159,53 @@ namespace Always_On_Server
                         //Joja run 
                         if (!this.Config.communitycenterrun)
                         {
-                            if (Game1.player.money >= 10000 && !Game1.player.mailReceived.Contains("JojaMember"))
+                            if (Game1.player.Money >= 10000 && !Game1.player.mailReceived.Contains("JojaMember"))
                             {
-                                Game1.player.money -= 5000;
+                                Game1.player.Money -= 5000;
                                 Game1.player.mailReceived.Add("JojaMember");
                                 this.SendChatMessage("Buying Joja Membership");
 
                             }
 
-                            if (Game1.player.money >= 30000 && !Game1.player.mailReceived.Contains("jojaBoilerRoom"))
+                            if (Game1.player.Money >= 30000 && !Game1.player.mailReceived.Contains("jojaBoilerRoom"))
                             {
-                                Game1.player.money -= 15000;
+                                Game1.player.Money -= 15000;
                                 Game1.player.mailReceived.Add("ccBoilerRoom");
                                 Game1.player.mailReceived.Add("jojaBoilerRoom");
                                 this.SendChatMessage("Buying Joja Minecarts");
 
                             }
 
-                            if (Game1.player.money >= 40000 && !Game1.player.mailReceived.Contains("jojaFishTank"))
+                            if (Game1.player.Money >= 40000 && !Game1.player.mailReceived.Contains("jojaFishTank"))
                             {
-                                Game1.player.money -= 20000;
+                                Game1.player.Money -= 20000;
                                 Game1.player.mailReceived.Add("ccFishTank");
                                 Game1.player.mailReceived.Add("jojaFishTank");
                                 this.SendChatMessage("Buying Joja Panning");
 
                             }
 
-                            if (Game1.player.money >= 50000 && !Game1.player.mailReceived.Contains("jojaCraftsRoom"))
+                            if (Game1.player.Money >= 50000 && !Game1.player.mailReceived.Contains("jojaCraftsRoom"))
                             {
-                                Game1.player.money -= 25000;
+                                Game1.player.Money -= 25000;
                                 Game1.player.mailReceived.Add("ccCraftsRoom");
                                 Game1.player.mailReceived.Add("jojaCraftsRoom");
                                 this.SendChatMessage("Buying Joja Bridge");
 
                             }
 
-                            if (Game1.player.money >= 70000 && !Game1.player.mailReceived.Contains("jojaPantry"))
+                            if (Game1.player.Money >= 70000 && !Game1.player.mailReceived.Contains("jojaPantry"))
                             {
-                                Game1.player.money -= 35000;
+                                Game1.player.Money -= 35000;
                                 Game1.player.mailReceived.Add("ccPantry");
                                 Game1.player.mailReceived.Add("jojaPantry");
                                 this.SendChatMessage("Buying Joja Greenhouse");
 
                             }
 
-                            if (Game1.player.money >= 80000 && !Game1.player.mailReceived.Contains("jojaVault"))
+                            if (Game1.player.Money >= 80000 && !Game1.player.mailReceived.Contains("jojaVault"))
                             {
-                                Game1.player.money -= 40000;
+                                Game1.player.Money -= 40000;
                                 Game1.player.mailReceived.Add("ccVault");
                                 Game1.player.mailReceived.Add("jojaVault");
                                 this.SendChatMessage("Buying Joja Bus");
