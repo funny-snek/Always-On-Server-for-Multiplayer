@@ -722,6 +722,17 @@ namespace Always_On_Server
                         this.LeaveFestival();
                 }
             }
+
+            // Skip level up menu
+            if (IsAutomating && Game1.activeClickableMenu is LevelUpMenu)
+            {
+                // Taken from LevelUpMenu.cs:504
+                this.Monitor.Log("Skipping level up menu");
+                ((LevelUpMenu)Game1.activeClickableMenu).isActive = false;
+                ((LevelUpMenu)Game1.activeClickableMenu).informationUp = false;
+                ((LevelUpMenu)Game1.activeClickableMenu).isProfessionChooser = false;
+                ((LevelUpMenu)Game1.activeClickableMenu).RemoveLevelFromLevelList();
+            }
         }
 
         //Pause game if no clients Code
